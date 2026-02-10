@@ -1,78 +1,28 @@
 [build]
   command = "npm run build"
   publish = ".next"
-  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
-  NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_PRIVATE_NETLIFY = "true"
 
-# Handle Next.js pages - serve from .next/server/middleware/static/ folder
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/_next/static/:splat"
-  status = 200
-
-# API routes - Next.js handles these internally
-[[redirects]]
-  from = "/api/*"
-  to = "/api/:splat"
-  status = 200
-
-# Static assets
-[[redirects]]
-  from = "/icons/*"
-  to = "/icons/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/manifest.json"
-  to = "/manifest.json"
-  status = 200
-
-# Next.js catch-all routes - must come after static file rules
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/nextjs"
+  to = "/index.html"
   status = 200
 
-# Security headers
-[headers]
+[[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self), biometric=()"
 
-# Cache headers for static assets
-[headers]
+[[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-[headers]
-  for = "/icons/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[headers]
-  for = "/manifest.json"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[headers]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[headers]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[headers]
+[[headers]]
   for = "/api/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
