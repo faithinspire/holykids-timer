@@ -39,7 +39,7 @@ export default function AdminStaffPage() {
     email: '',
     department: '',
     phone: '',
-    role: 'staff'
+    role: 'Support Staff'
   })
   const [newPin, setNewPin] = useState('')
 
@@ -164,7 +164,7 @@ export default function AdminStaffPage() {
       setShowPinModal(true)
     } finally {
       setSaving(false)
-      setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'staff' })
+      setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'Support Staff' })
     }
   }
 
@@ -414,9 +414,13 @@ export default function AdminStaffPage() {
                   onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
-                  <option value="staff">Staff</option>
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
+                  <option value="Support Staff">Support Staff</option>
+                  <option value="Teacher">Teacher</option>
+                  <option value="Administrator">Administrator</option>
+                  <option value="HR Manager">HR Manager</option>
+                  <option value="Department Head">Department Head</option>
+                  <option value="Security">Security</option>
+                  <option value="Maintenance">Maintenance</option>
                 </select>
               </div>
             </div>
@@ -425,7 +429,7 @@ export default function AdminStaffPage() {
                 type="button"
                 onClick={() => {
                   setShowAddModal(false)
-                  setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'staff' })
+                  setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'Support Staff' })
                 }}
                 className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium active:bg-gray-100"
               >

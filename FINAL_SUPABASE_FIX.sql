@@ -3,7 +3,30 @@
 -- Run this in Supabase SQL Editor
 -- ============================================
 
--- 1. Add PIN column if it doesn't exist
+-- 1. Ensure staff_role enum exists with all values
+DO $$ 
+BEGIN
+    -- Check if enum exists
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'staff_role') THEN
+        CREATE TYPE staff_role AS ENUM (
+            'Super Admin', 'Administrator', 'HR Manager', 'Department Head',
+            'Teacher', 'Support Staff', 'Security', 'Maintenance'
+        );
+        RAISE NOTICE 'staff_role enum created';
+    ELSE
+        -- Add missing values if enum exists
+        BEGIN
+            ALTER TYPE staff_role ADD VALUE IF NOT EXISTS 'Support Staff';
+            ALTER TYPE staff_role ADD VALUE IF NOT EXISTS 'Teacher';
+            ALTER TYPE staff_role ADD VALUE IF NOT EXISTS 'Security';
+            ALTER TYPE staff_role ADD VALUE IF NOT EXISTS 'Maintenance';
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Some enum values may already exist';
+        END;
+    END IF;
+END $$;
+
+-- 2. Add PIN column if it doesn't exist
 DO $$ 
 BEGIN
     IF NOT EXISTS (
@@ -17,7 +40,7 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Add biometric columns if they don't exist
+-- 3. Add biometric columns if they don't exist
 DO $$ 
 BEGIN
     IF NOT EXISTS (
@@ -37,17 +60,17 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Create indexes for better performance
+-- 4. Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_staff_pin ON staff(pin);
 CREATE INDEX IF NOT EXISTS idx_staff_biometric_id ON staff(biometric_id);
 CREATE INDEX IF NOT EXISTS idx_staff_biometric_enrolled ON staff(biometric_enrolled);
 
--- 4. Update existing staff with random PINs if they don't have one
+-- 5. Update existing staff with random PINs if they don't have one
 UPDATE staff 
 SET pin = LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0')
 WHERE pin IS NULL AND is_active = true;
 
--- 5. Verify the changes
+-- 6. Verify the changes
 SELECT 
     column_name, 
     data_type, 
@@ -57,7 +80,7 @@ WHERE table_name = 'staff'
 AND column_name IN ('pin', 'biometric_enrolled', 'biometric_id')
 ORDER BY column_name;
 
--- 6. Show sample data
+-- 7. Show sample data
 SELECT 
     staff_id,
     first_name,
