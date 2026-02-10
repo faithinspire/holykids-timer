@@ -206,23 +206,6 @@ export default function AdminStaffPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Warning Banner - Supabase not configured */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-4 mt-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <span className="text-yellow-400">⚠️</span>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-yellow-700">
-              <strong>Cloud storage not configured.</strong> Staff will be saved locally only and won't sync across devices.
-            </p>
-            <p className="text-xs text-yellow-600 mt-1">
-              To fix: Set Supabase environment variables in Netlify. See <a href="/test-connection" className="underline">test-connection</a> page.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="shadow-lg" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
         <div className="px-4 py-4">
