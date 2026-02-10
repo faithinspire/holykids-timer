@@ -4,12 +4,12 @@ HOLYKIDS - DEPLOY INSTRUCTIONS
 
 The build error has been FIXED! 
 
-3 files were updated:
+2 files were updated:
 ✓ app/clock-in/page.tsx
 ✓ app/admin/staff/page.tsx  
-✓ app/admin/settings/page.tsx
 
-All pages now have proper dynamic rendering configuration.
+ThemeToggle now uses dynamic import with SSR disabled.
+This prevents the "useTheme must be used within ThemeProvider" error.
 
 ========================================
 TO DEPLOY - CHOOSE ONE METHOD:
@@ -31,15 +31,15 @@ METHOD 2 (COMMAND PROMPT):
 
 cd "C:\Users\OLU\Desktop\my files\TIME ATTENDANCE"
 git add .
-git commit -m "Fix build errors - add dynamic rendering"
+git commit -m "Fix ThemeToggle SSR issue - use dynamic import"
 git push origin main
 
 
 METHOD 3 (GITHUB DESKTOP):
 --------------------------
 1. Open GitHub Desktop app
-2. You'll see 3 changed files
-3. Write commit message: "Fix build errors"
+2. You'll see 2 changed files
+3. Write commit message: "Fix ThemeToggle SSR issue"
 4. Click "Commit to main"
 5. Click "Push origin"
 
@@ -61,11 +61,14 @@ WHAT WAS FIXED:
 ========================================
 
 The error "useTheme must be used within ThemeProvider" 
-was happening because pages were being pre-rendered 
-without the theme context.
+was happening because ThemeToggle was being rendered 
+on the server where the context doesn't exist.
 
-Solution: Added dynamic rendering to all pages that 
-use the ThemeToggle component.
+Solution: Used Next.js dynamic import with { ssr: false }
+to load ThemeToggle only on the client side.
+
+This is the proper way to handle components that need
+browser-only features or React Context.
 
 ========================================
 

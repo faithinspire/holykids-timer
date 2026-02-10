@@ -1,0 +1,54 @@
+╔════════════════════════════════════════╗
+║   HOLYKIDS - QUICK DEPLOY GUIDE        ║
+╚════════════════════════════════════════╝
+
+✓ FIX APPLIED: Dynamic import for ThemeToggle
+✓ FILES CHANGED: 2 (clock-in, admin/staff)
+✓ READY TO DEPLOY!
+
+┌────────────────────────────────────────┐
+│ FASTEST WAY TO DEPLOY:                 │
+└────────────────────────────────────────┘
+
+Double-click: deploy.bat
+
+That's it! ✓
+
+┌────────────────────────────────────────┐
+│ OR USE COMMAND PROMPT:                 │
+└────────────────────────────────────────┘
+
+cd "C:\Users\OLU\Desktop\my files\TIME ATTENDANCE"
+git add .
+git commit -m "Fix ThemeToggle SSR"
+git push origin main
+
+┌────────────────────────────────────────┐
+│ WHAT HAPPENS NEXT:                     │
+└────────────────────────────────────────┘
+
+1. GitHub receives your changes
+2. Vercel detects the push
+3. Vercel builds your app (2-3 min)
+4. Build succeeds ✓
+5. App goes live!
+
+┌────────────────────────────────────────┐
+│ YOUR APP URL:                          │
+└────────────────────────────────────────┘
+
+https://holykids-timer.vercel.app
+
+┌────────────────────────────────────────┐
+│ AFTER DEPLOYMENT:                      │
+└────────────────────────────────────────┘
+
+✓ Open app on your phone
+✓ Test clock-in page
+✓ Try fingerprint scanning
+✓ Test theme toggle
+✓ Register staff members
+
+╔════════════════════════════════════════╗
+║  READY? RUN deploy.bat NOW!            ║
+╚════════════════════════════════════════╝

@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import ThemeToggle from '@/components/ui/ThemeToggle'
+import dynamic from 'next/dynamic'
 
-export const dynamic = 'force-dynamic'
+const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
 
 interface StaffMember {
   id: string

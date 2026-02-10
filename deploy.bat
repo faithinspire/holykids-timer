@@ -9,7 +9,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Fix build errors - add dynamic rendering to all pages using ThemeToggle"
+git commit -m "Fix ThemeToggle SSR issue - use dynamic import with ssr:false"
 
 echo.
 echo Pushing to GitHub...

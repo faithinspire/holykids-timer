@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import ThemeToggle from '@/components/ui/ThemeToggle'
+import dynamic from 'next/dynamic'
 
-export const dynamic = 'force-dynamic'
+const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
 
 export default function ClockInPage() {
   const router = useRouter()

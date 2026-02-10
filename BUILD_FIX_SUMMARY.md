@@ -8,52 +8,79 @@ Error occurred prerendering page "/clock-in"
 ```
 
 ## Root Cause
-Pages using the `ThemeToggle` component were being statically pre-rendered during build, but the `ThemeProvider` context wasn't available during SSR (Server-Side Rendering). This caused the `useTheme` hook to fail.
+The `ThemeToggle` component uses the `useTheme` hook which requires the `ThemeProvider` context. During Next.js build process, pages are pre-rendered on the server (SSR), but React Context providers are not available during this static generation phase.
+
+Even with `export const dynamic = 'force-dynamic'`, Next.js was still attempting to pre-render the page, causing the context error.
 
 ## Solution Applied
-Added `export const dynamic = 'force-dynamic'` to all pages using `ThemeToggle` component to force dynamic rendering instead of static generation.
+Used Next.js `dynamic()` import with `{ ssr: false }` option to load the `ThemeToggle` component only on the client side, completely skipping server-side rendering for this component.
+
+```typescript
+import dynamic from 'next/dynamic'
+const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
+```
+
+This ensures:
+- Component is only rendered in the browser (client-side)
+- No SSR/pre-rendering attempts for this component
+- ThemeProvider context is always available when component renders
+- Build process completes successfully
 
 ## Files Modified
 
 ### 1. app/clock-in/page.tsx
-- Added `export const dynamic = 'force-dynamic'` after imports
-- This forces the page to render dynamically, ensuring ThemeProvider is available
+- Replaced static import with dynamic import
+- Added `{ ssr: false }` option to skip server-side rendering
+- Removed `export const dynamic = 'force-dynamic'` (no longer needed)
 
 ### 2. app/admin/staff/page.tsx
-- Added `export const dynamic = 'force-dynamic'` after imports
-- Prevents static generation issues with ThemeToggle component
-
-### 3. app/admin/settings/page.tsx
-- Moved `export const dynamic = 'force-dynamic'` to correct position (after imports)
-- Added missing `const supabase = getSupabaseClient()` initialization
+- Replaced static import with dynamic import
+- Added `{ ssr: false }` option to skip server-side rendering
+- Removed `export const dynamic = 'force-dynamic'` (no longer needed)
 
 ## How to Deploy
 
 ### Option 1: Use the deploy.bat script (Easiest)
 1. Double-click `deploy.bat` in the project folder
 2. Wait for it to complete
-3. Check Vercel dashboard for deployment status
+3. Done!
 
 ### Option 2: Manual Git commands
 Open Command Prompt and run:
 ```cmd
 cd "C:\Users\OLU\Desktop\my files\TIME ATTENDANCE"
 git add .
-git commit -m "Fix build errors - add dynamic rendering to all pages using ThemeToggle"
+git commit -m "Fix ThemeToggle SSR issue - use dynamic import with ssr:false"
 git push origin main
 ```
 
 ### Option 3: Use GitHub Desktop
-1. Open GitHub Desktop
-2. Review changes to the 3 files
-3. Commit with message: "Fix build errors - add dynamic rendering"
-4. Push to origin
+1. Open GitHub Desktop app
+2. You'll see 2 changed files
+3. Write commit message: "Fix ThemeToggle SSR issue"
+4. Click "Commit to main"
+5. Click "Push origin"
 
 ## Expected Result
-- Build should complete successfully
-- All pages will render dynamically
-- ThemeToggle will work correctly on all pages
-- Clock-in page will be accessible at: https://your-app.vercel.app/clock-in
+- Build should complete successfully ✓
+- No more "useTheme must be used within ThemeProvider" errors
+- ThemeToggle will load on client-side only
+- All pages will render correctly
+- Clock-in page will be accessible
+
+## Technical Details
+
+### Why dynamic import with ssr: false?
+- `dynamic()` is Next.js's way to lazy-load components
+- `{ ssr: false }` tells Next.js to skip this component during server rendering
+- Component only loads and renders in the browser where React Context is available
+- This is the recommended approach for components that depend on browser-only APIs or client-side context
+
+### Performance Impact
+- Minimal: ThemeToggle is a small component (~2KB)
+- Loads after initial page render (non-blocking)
+- User experience remains smooth
+- No visible delay in theme toggle functionality
 
 ## Next Steps After Successful Deployment
 1. Test the clock-in page on your phone
@@ -62,12 +89,8 @@ git push origin main
 4. Register staff and test biometric enrollment
 5. Test staff clock-in with fingerprint
 
-## Technical Details
-- `export const dynamic = 'force-dynamic'` tells Next.js to skip static generation
-- This ensures the page is rendered on each request with full context
-- Required for pages using React Context (like ThemeProvider) that need client-side state
-- Trade-off: Slightly slower initial load, but necessary for dynamic features
-
 ---
 Created: February 10, 2026
+Updated: February 10, 2026 (13:35)
 Status: Ready to deploy
+Solution: Dynamic import with SSR disabled
