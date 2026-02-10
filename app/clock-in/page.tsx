@@ -1,11 +1,11 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+
+export const dynamic = 'force-dynamic'
 
 export default function ClockInPage() {
   const router = useRouter()
