@@ -9,14 +9,14 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'HOLYKIDS Staff Attendance',
   description: 'HOLYKIDS Staff Biometric Attendance System',
-  manifest: '/manifest.json',
   themeColor: '#667eea',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'HOLYKIDS Attendance',
+    title: 'HOLYKIDS Timer',
   },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
