@@ -29,7 +29,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('holykids_theme', theme)
-      document.documentElement.classList.toggle('dark', theme === 'dark')
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark')
+        document.body.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+        document.body.classList.remove('dark')
+      }
     }
   }, [theme, mounted])
 

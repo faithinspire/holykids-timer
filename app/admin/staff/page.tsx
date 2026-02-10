@@ -115,25 +115,28 @@ export default function AdminStaffPage() {
         body: JSON.stringify(staffMember)
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log('API response:', data)
-        toast.success('Staff saved to database!')
+      const data = await response.json()
+      console.log('API response:', data)
+
+      if (response.ok && data.success) {
+        toast.success('✅ Staff saved to database!')
         
         // Show PIN after adding
         setNewPin(pin)
-        setSelectedStaff(data.staff || staffMember)
+        setSelectedStaff(data.staff || { ...staffMember, id: Date.now().toString(), staff_id: `STF${Date.now().toString().slice(-4)}` })
         setShowAddModal(false)
         setShowPinModal(true)
         
         // Reload staff list
-        loadStaff()
+        await loadStaff()
       } else {
-        // Fallback: save locally
-        throw new Error('API failed')
+        // API returned error, save locally
+        console.error('API error:', data.error || data.message)
+        toast.error(`Database error: ${data.error || 'Unknown error'}. Saving locally...`)
+        throw new Error(data.error || 'API failed')
       }
-    } catch (error) {
-      console.log('Saving locally:', error)
+    } catch (error: any) {
+      console.log('Saving locally due to error:', error.message)
       
       // Save to localStorage as fallback
       const localStaff: StaffMember = {
