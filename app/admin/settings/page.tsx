@@ -1,13 +1,15 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+
+export const dynamic = 'force-dynamic'
+
+const supabase = getSupabaseClient()
 
 interface OrganizationSettings {
   name: string

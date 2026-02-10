@@ -6,6 +6,8 @@ import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 
+export const dynamic = 'force-dynamic'
+
 interface StaffMember {
   id: string
   staff_id: string
