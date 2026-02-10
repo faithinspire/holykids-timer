@@ -33,49 +33,73 @@ export default function BiometricSetupPage() {
     setEnrolling(true)
     
     try {
-      // Check if Web Authentication API is available
+      // Check if device supports biometric
       if (!window.PublicKeyCredential) {
         toast.error('Biometric authentication not supported on this device')
         setEnrolling(false)
         return
       }
 
-      // Create credential for biometric
+      // Simple biometric check - just verify the device can do biometric auth
+      const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      
+      if (!available) {
+        toast.error('No fingerprint sensor detected on this device')
+        setEnrolling(false)
+        return
+      }
+
+      // Generate a unique biometric ID for this staff member
+      const biometricId = `holykids_${staff.staff_id}_${Date.now()}`
+      
+      // Create a simple credential with fingerprint
+      const publicKeyOptions = {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: {
+          name: 'HOLYKIDS',
+          id: window.location.hostname
+        },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: staff.staff_id,
+          displayName: `${staff.first_name} ${staff.last_name}`
+        },
+        pubKeyCredParams: [
+          { alg: -7, type: 'public-key' as const },
+          { alg: -257, type: 'public-key' as const }
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform' as const,
+          requireResidentKey: false,
+          userVerification: 'required' as const
+        },
+        timeout: 60000,
+        attestation: 'none' as const
+      }
+
       const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge: new Uint8Array(32),
-          rp: {
-            name: 'HOLYKIDS Attendance',
-            id: window.location.hostname
-          },
-          user: {
-            id: new Uint8Array(16),
-            name: staff.email || staff.staff_id,
-            displayName: `${staff.first_name} ${staff.last_name}`
-          },
-          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required'
-          },
-          timeout: 60000
-        }
-      })
+        publicKey: publicKeyOptions
+      }) as PublicKeyCredential
 
       if (credential) {
-        // Save biometric enrollment
+        // Save biometric enrollment to localStorage
         const staffData = localStorage.getItem('holykids_staff')
         if (staffData) {
           const staffList = JSON.parse(staffData)
           const updatedList = staffList.map((s: any) => 
             s.id === staff.id 
-              ? { ...s, biometric_enrolled: true, biometric_id: credential.id }
+              ? { 
+                  ...s, 
+                  biometric_enrolled: true, 
+                  biometric_id: credential.id,
+                  biometric_raw_id: Array.from(new Uint8Array(credential.rawId))
+                }
               : s
           )
           localStorage.setItem('holykids_staff', JSON.stringify(updatedList))
         }
 
-        toast.success('Fingerprint enrolled successfully!')
+        toast.success('✅ Fingerprint enrolled successfully!')
         setTimeout(() => {
           window.location.href = '/admin/staff'
         }, 1500)
@@ -83,7 +107,9 @@ export default function BiometricSetupPage() {
     } catch (error: any) {
       console.error('Biometric enrollment error:', error)
       if (error.name === 'NotAllowedError') {
-        toast.error('Biometric enrollment cancelled')
+        toast.error('Fingerprint enrollment cancelled')
+      } else if (error.name === 'NotSupportedError') {
+        toast.error('Fingerprint not supported on this device')
       } else {
         toast.error('Fingerprint enrollment failed. Please try again.')
       }

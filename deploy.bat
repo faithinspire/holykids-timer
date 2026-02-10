@@ -9,7 +9,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Fix ThemeToggle SSR issue - use dynamic import with ssr:false"
+git commit -m "Fix biometric enrollment - proper fingerprint registration and authentication"
 
 echo.
 echo Pushing to GitHub...

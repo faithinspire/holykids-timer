@@ -1,0 +1,90 @@
+========================================
+WHY IT ASKS FOR "PASSKEY"
+========================================
+
+Don't worry! This is NORMAL and CORRECT.
+
+"Passkey" is just the modern name for:
+✓ Fingerprint (on phones)
+✓ Face ID (on iPhone)
+✓ Touch ID (on Android)
+
+You DON'T need a USB key!
+
+========================================
+WHAT TO DO:
+========================================
+
+When it says "Use your passkey":
+1. Just place your finger on the sensor
+2. That's it!
+
+Your phone's fingerprint = passkey
+
+========================================
+THE PROCESS:
+========================================
+
+ENROLLMENT (One-time setup):
+1. Add staff in Staff Management
+2. Click "Setup" under Biometric
+3. Phone says: "Use your passkey"
+4. Place finger on sensor
+5. Done! ✅
+
+CLOCK-IN (Daily use):
+1. Go to Clock In page
+2. Click "Scan Fingerprint"
+3. Phone says: "Use your passkey"
+4. Place finger on sensor
+5. Success! Shows name and time
+6. Auto-resets for next person
+
+========================================
+WHY THIS IS BETTER:
+========================================
+
+✓ No passwords to remember
+✓ No USB keys to carry
+✓ Just use your fingerprint
+✓ Fast and secure
+✓ Fingerprint never leaves your phone
+
+========================================
+IMPORTANT:
+========================================
+
+"Passkey" = Your fingerprint
+NOT a USB security key
+NOT a password
+NOT an external device
+
+Just your phone's built-in fingerprint sensor!
+
+========================================
+TROUBLESHOOTING:
+========================================
+
+If it keeps asking for passkey:
+1. Make sure fingerprint is set up in phone settings
+2. Go to: Settings > Security > Fingerprint
+3. Add at least one fingerprint
+4. Try enrollment again
+
+If fingerprint doesn't work:
+1. Use "Use PIN Instead" option
+2. Enter the 4-digit PIN
+3. Clock in successfully
+
+========================================
+
+READY TO TEST?
+
+1. Add a staff member
+2. Click "Setup" biometric
+3. Use YOUR fingerprint
+4. Go to Clock In page
+5. Scan fingerprint again
+6. See success screen!
+
+========================================

@@ -25,27 +25,49 @@ export default function ClockInPage() {
         return
       }
 
+      // Get all enrolled staff
+      const staffData = localStorage.getItem('holykids_staff')
+      if (!staffData) {
+        toast.error('No staff registered in system')
+        setScanning(false)
+        return
+      }
+
+      const staffList = JSON.parse(staffData)
+      const enrolledStaff = staffList.filter((s: any) => s.biometric_enrolled && s.biometric_raw_id)
+
+      if (enrolledStaff.length === 0) {
+        toast.error('No staff with fingerprint enrolled. Please enroll first.')
+        setScanning(false)
+        return
+      }
+
+      // Create allowCredentials array from enrolled staff
+      const allowCredentials = enrolledStaff.map((s: any) => ({
+        id: new Uint8Array(s.biometric_raw_id),
+        type: 'public-key' as const,
+        transports: ['internal'] as AuthenticatorTransport[]
+      }))
+
       // Request biometric authentication
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge: new Uint8Array(32),
-          timeout: 60000,
-          userVerification: 'required',
-          allowCredentials: []
-        }
-      })
+      const publicKeyOptions = {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        timeout: 60000,
+        rpId: window.location.hostname,
+        allowCredentials: allowCredentials,
+        userVerification: 'required' as const
+      }
 
-      if (credential) {
-        // Find staff by biometric ID
-        const staffData = localStorage.getItem('holykids_staff')
-        if (!staffData) {
-          toast.error('No staff registered in system')
-          setScanning(false)
-          return
-        }
+      const assertion = await navigator.credentials.get({
+        publicKey: publicKeyOptions
+      }) as PublicKeyCredential
 
-        const staffList = JSON.parse(staffData)
-        const staff = staffList.find((s: any) => s.biometric_id === credential.id)
+      if (assertion) {
+        // Find which staff member this credential belongs to
+        const rawIdArray = Array.from(new Uint8Array(assertion.rawId))
+        const staff = enrolledStaff.find((s: any) => 
+          JSON.stringify(s.biometric_raw_id) === JSON.stringify(rawIdArray)
+        )
 
         if (!staff) {
           toast.error('❌ Fingerprint not recognized. Please register first.')
@@ -104,9 +126,11 @@ export default function ClockInPage() {
     } catch (error: any) {
       console.error('Biometric scan error:', error)
       if (error.name === 'NotAllowedError') {
-        toast.error('Scan cancelled')
+        toast.error('Fingerprint scan cancelled')
+      } else if (error.name === 'NotSupportedError') {
+        toast.error('Fingerprint not supported on this device')
       } else {
-        toast.error('Scan failed. Please try again.')
+        toast.error('Scan failed. Please try again or use PIN.')
       }
     } finally {
       setScanning(false)
