@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
