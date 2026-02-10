@@ -133,16 +133,6 @@ export default function AdminStaffPage() {
       }
     } catch (error) {
       console.log('Saving locally:', error)
-        setShowPinModal(true)
-        
-        // Reload staff list
-        loadStaff()
-      } else {
-        // Fallback: save locally
-        throw new Error('API failed')
-      }
-    } catch (error) {
-      console.log('Saving locally:', error)
       
       // Save to localStorage as fallback
       const localStaff: StaffMember = {
