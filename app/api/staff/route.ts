@@ -6,15 +6,22 @@ function createServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   
+  console.log('Supabase URL:', url)
   console.log('Supabase URL configured:', !!url)
   console.log('Supabase Service Key configured:', !!key)
   
-  if (!url || !key) {
-    console.warn('Supabase not configured - staff will be stored locally only')
+  // Check if URL is valid
+  if (!url || !key || url === '=' || url.trim() === '' || !url.startsWith('http')) {
+    console.warn('Supabase not configured properly - staff will be stored locally only')
     return null
   }
   
-  return createClient(url, key)
+  try {
+    return createClient(url, key)
+  } catch (error) {
+    console.error('Error creating Supabase client:', error)
+    return null
+  }
 }
 
 export async function GET() {
@@ -86,8 +93,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ 
         success: true, 
         staff: localStaff,
-        message: 'Staff saved locally (Supabase not configured)',
-        warning: 'Configure Supabase environment variables in Netlify for cloud sync'
+        message: 'Staff saved locally',
+        warning: 'Cloud storage not configured. Data saved to browser only.'
       })
     }
 

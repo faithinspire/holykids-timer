@@ -119,11 +119,15 @@ export default function AdminStaffPage() {
       console.log('API response:', data)
 
       if (response.ok && data.success) {
-        toast.success('✅ Staff saved to database!')
+        if (data.warning) {
+          toast.success('✅ Staff saved locally (offline mode)')
+        } else {
+          toast.success('✅ Staff saved to cloud database!')
+        }
         
         // Show PIN after adding
         setNewPin(pin)
-        setSelectedStaff(data.staff || { ...staffMember, id: Date.now().toString(), staff_id: `STF${Date.now().toString().slice(-4)}` })
+        setSelectedStaff(data.staff || { ...staffMember, id: Date.now().toString(), staff_id: `STF${Date.now().toString().slice(-4)}`, biometric_enrolled: false, is_active: true })
         setShowAddModal(false)
         setShowPinModal(true)
         
@@ -132,7 +136,6 @@ export default function AdminStaffPage() {
       } else {
         // API returned error, save locally
         console.error('API error:', data.error || data.message)
-        toast.error(`Database error: ${data.error || 'Unknown error'}. Saving locally...`)
         throw new Error(data.error || 'API failed')
       }
     } catch (error: any) {
