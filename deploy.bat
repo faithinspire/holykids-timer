@@ -9,7 +9,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Fix biometric enrollment - proper fingerprint registration and authentication"
+git commit -m "Fix biometric enrollment detection with debug logging"
 
 echo.
 echo Pushing to GitHub...

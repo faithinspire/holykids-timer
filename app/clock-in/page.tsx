@@ -25,7 +25,7 @@ export default function ClockInPage() {
         return
       }
 
-      // Get all enrolled staff
+      // Get all staff from localStorage
       const staffData = localStorage.getItem('holykids_staff')
       if (!staffData) {
         toast.error('No staff registered in system')
@@ -34,10 +34,19 @@ export default function ClockInPage() {
       }
 
       const staffList = JSON.parse(staffData)
-      const enrolledStaff = staffList.filter((s: any) => s.biometric_enrolled && s.biometric_raw_id)
+      console.log('All staff:', staffList)
+      
+      // Filter enrolled staff
+      const enrolledStaff = staffList.filter((s: any) => {
+        const hasEnrollment = s.biometric_enrolled === true && s.biometric_raw_id && Array.isArray(s.biometric_raw_id)
+        console.log(`Staff ${s.first_name}: enrolled=${s.biometric_enrolled}, has_raw_id=${!!s.biometric_raw_id}`)
+        return hasEnrollment
+      })
+
+      console.log('Enrolled staff count:', enrolledStaff.length)
 
       if (enrolledStaff.length === 0) {
-        toast.error('No staff with fingerprint enrolled. Please enroll first.')
+        toast.error('No staff with fingerprint enrolled. Please enroll first in Staff Management.')
         setScanning(false)
         return
       }
@@ -48,6 +57,8 @@ export default function ClockInPage() {
         type: 'public-key' as const,
         transports: ['internal'] as AuthenticatorTransport[]
       }))
+
+      console.log('Requesting biometric authentication...')
 
       // Request biometric authentication
       const publicKeyOptions = {
@@ -63,6 +74,8 @@ export default function ClockInPage() {
       }) as PublicKeyCredential
 
       if (assertion) {
+        console.log('Biometric authenticated, finding staff...')
+        
         // Find which staff member this credential belongs to
         const rawIdArray = Array.from(new Uint8Array(assertion.rawId))
         const staff = enrolledStaff.find((s: any) => 
@@ -74,6 +87,8 @@ export default function ClockInPage() {
           setScanning(false)
           return
         }
+
+        console.log('Staff found:', staff.first_name)
 
         // Check if already checked in today
         const today = new Date().toISOString().split('T')[0]
