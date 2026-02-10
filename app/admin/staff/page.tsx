@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface StaffMember {
   id: string
@@ -205,26 +206,29 @@ export default function AdminStaffPage() {
   const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 transition-colors duration-300">
       {/* Header */}
-      <div className="shadow-lg" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div className="shadow-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 dark:from-purple-800 dark:via-indigo-800 dark:to-blue-800">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button onClick={() => window.location.href = '/admin/dashboard'} className="text-white hover:bg-white/10 p-2 rounded-lg">
+              <button onClick={() => window.location.href = '/admin/dashboard'} className="text-white hover:bg-white/10 p-2 rounded-lg transition-all">
                 ← Back
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">Staff Management</h1>
+                <h1 className="text-xl font-bold text-white drop-shadow-lg">Staff Management</h1>
                 <p className="text-white/80 text-xs">{currentDate}</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium text-sm"
-            >
-              + Add Staff
-            </button>
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform shadow-lg"
+              >
+                + Add Staff
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -232,34 +236,34 @@ export default function AdminStaffPage() {
       <div className="px-4 py-4 max-w-7xl mx-auto">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <p className="text-gray-500 text-xs">Total Staff</p>
-            <p className="text-2xl font-bold text-gray-800">{staffList.length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border-l-4 border-blue-500 dark:border-blue-400 hover:scale-105 transition-transform">
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Total Staff</p>
+            <p className="text-2xl font-bold text-gray-800 dark:text-white">{staffList.length}</p>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <p className="text-gray-500 text-xs">With PIN</p>
-            <p className="text-2xl font-bold text-green-600">{staffList.length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border-l-4 border-green-500 dark:border-green-400 hover:scale-105 transition-transform">
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">With PIN</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{staffList.length}</p>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <p className="text-gray-500 text-xs">Biometric</p>
-            <p className="text-2xl font-bold text-purple-600">{staffList.filter(s => s.biometric_enrolled).length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border-l-4 border-purple-500 dark:border-purple-400 hover:scale-105 transition-transform">
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Biometric</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{staffList.filter(s => s.biometric_enrolled).length}</p>
           </div>
         </div>
 
         {/* Staff Table */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-100">
+              <thead className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/50 dark:to-blue-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Staff</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 hidden-mobile">Department</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">PIN</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Biometric</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Staff</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider hidden-mobile">Department</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">PIN</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Biometric</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {staffList.map((member) => (
                   <tr key={member.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">

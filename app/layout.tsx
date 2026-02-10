@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -50,12 +51,13 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={`${inter.className} bg-gray-50 text-gray-900 antialiased`}>
+      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased transition-colors duration-300`}>
         <ThemeProvider>
           <AuthProvider>
             <div className="min-h-screen safe-area-top safe-area-bottom">
               {children}
             </div>
+            <PWAInstallPrompt />
             <Toaster
               position="top-center"
               toastOptions={{
