@@ -1,146 +1,265 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 
-const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
+const ThemeToggle = dynamicImport(() => import('@/components/ui/ThemeToggle'), { ssr: false })
 
 export default function ClockInPage() {
   const router = useRouter()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [scanning, setScanning] = useState(false)
   const [lastCheckIn, setLastCheckIn] = useState<any>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [enrolledCount, setEnrolledCount] = useState(0)
-  const [enrolledStaff, setEnrolledStaff] = useState<any[]>([])
+  const [cameraActive, setCameraActive] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [faceDetected, setFaceDetected] = useState(false)
+  const [faceapi, setFaceapi] = useState<any>(null)
 
   useEffect(() => {
-    loadEnrolledStaff()
+    loadFaceAPI()
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
   }, [])
 
-  const loadEnrolledStaff = async () => {
+  const loadFaceAPI = async () => {
     try {
-      // Try to fetch from API (Supabase)
-      const response = await fetch('/api/staff')
-      const data = await response.json()
+      const faceapiModule = await import('face-api.js')
+      setFaceapi(faceapiModule)
       
-      if (data.staff && data.staff.length > 0) {
-        const enrolled = data.staff.filter((s: any) => s.biometric_enrolled === true)
-        setEnrolledStaff(enrolled)
-        setEnrolledCount(enrolled.length)
-        console.log('📊 Enrolled staff from database:', enrolled.length)
-        console.log('📋 Enrolled staff:', enrolled.map((s: any) => `${s.first_name} ${s.last_name}`))
-        return
-      }
+      await faceapiModule.nets.tinyFaceDetector.loadFromUri('/models')
+      await faceapiModule.nets.faceLandmark68Net.loadFromUri('/models')
+      await faceapiModule.nets.faceRecognitionNet.loadFromUri('/models')
+      
+      await loadEnrolledStaff()
     } catch (error) {
-      console.log('Could not fetch from API, trying localStorage...')
-    }
-
-    // Fallback to localStorage
-    const staffData = localStorage.getItem('holykids_staff')
-    if (staffData) {
-      const staffList = JSON.parse(staffData)
-      const enrolled = staffList.filter((s: any) => s.biometric_enrolled === true)
-      setEnrolledStaff(enrolled)
-      setEnrolledCount(enrolled.length)
-      console.log('📊 Enrolled staff from localStorage:', enrolled.length)
+      console.error('Error loading face-api:', error)
+      toast.error('Failed to load facial recognition')
     }
   }
 
-  const handleBiometricScan = async () => {
+  useEffect(() => {
+    if (cameraActive && videoRef.current && faceapi) {
+      detectFace()
+    }
+  }, [cameraActive, faceapi])
+
+  const loadEnrolledStaff = async () => {
+    try {
+      const response = await fetch('/api/face/enroll')
+      const data = await response.json()
+      
+      if (data.enrolled_faces && data.enrolled_faces.length > 0) {
+        setEnrolledCount(data.enrolled_faces.length)
+        toast.success(`${data.enrolled_faces.length} staff enrolled`)
+      } else {
+        setEnrolledCount(0)
+      }
+    } catch (error) {
+      console.log('Could not fetch enrolled faces')
+      setEnrolledCount(0)
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
+      })
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+        setStream(mediaStream)
+        setCameraActive(true)
+      }
+    } catch (error) {
+      console.error('Camera error:', error)
+      toast.error('Could not access camera')
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+      setCameraActive(false)
+    }
+  }
+
+  const detectFace = async () => {
+    if (!videoRef.current || !canvasRef.current || !faceapi || scanning) return
+
+    const detection = await faceapi.detectSingleFace(
+      videoRef.current,
+      new faceapi.TinyFaceDetectorOptions()
+    ).withFaceLandmarks()
+
+    if (detection) {
+      setFaceDetected(true)
+      const dims = faceapi.matchDimensions(canvasRef.current, videoRef.current, true)
+      const resizedDetection = faceapi.resizeResults(detection, dims)
+      const ctx = canvasRef.current.getContext('2d')
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+        faceapi.draw.drawDetections(canvasRef.current, resizedDetection)
+        faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetection)
+      }
+    } else {
+      setFaceDetected(false)
+      const ctx = canvasRef.current?.getContext('2d')
+      if (ctx && canvasRef.current) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+      }
+    }
+
+    if (cameraActive) {
+      requestAnimationFrame(detectFace)
+    }
+  }
+
+  const handleFaceScan = async () => {
+    if (!faceDetected) {
+      toast.error('No face detected. Please position your face in the frame.')
+      return
+    }
+
+    if (enrolledCount === 0) {
+      toast.error('No staff enrolled. Please enroll faces first in Staff Management.')
+      return
+    }
+
     setScanning(true)
-    setShowSuccess(false)
 
     try {
-      if (enrolledStaff.length === 0) {
-        toast.error('No staff with fingerprint enrolled. Please enroll first in Staff Management.')
+      const detection = await faceapi
+        .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+
+      if (!detection) {
+        toast.error('Could not detect face. Please try again.')
         setScanning(false)
         return
       }
 
-      console.log('✅ Found', enrolledStaff.length, 'enrolled staff')
-      enrolledStaff.forEach((s: any) => {
-        console.log(`  - ${s.first_name} ${s.last_name} (ID: ${s.staff_id})`)
-      })
+      const targetEmbedding = Array.from(detection.descriptor)
 
-      // Show fingerprint prompt
-      toast('👆 Place your finger on the sensor...', { duration: 3000 })
+      // Get enrolled faces
+      const response = await fetch('/api/face/enroll')
+      const data = await response.json()
+      const enrolledFaces = data.enrolled_faces || []
 
-      // Simulate fingerprint scan (2 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Find best match
+      let bestMatch: any = null
+      let highestSimilarity = 0
 
-      // Use the first enrolled staff (in production, this would match the actual fingerprint)
-      const staff = enrolledStaff[0]
+      for (const enrolled of enrolledFaces) {
+        const similarity = compareFaceEmbeddings(targetEmbedding, enrolled.embedding)
+        if (similarity > highestSimilarity) {
+          highestSimilarity = similarity
+          bestMatch = { ...enrolled, confidence: similarity }
+        }
+      }
 
-      console.log('🎯 Staff identified:', `${staff.first_name} ${staff.last_name}`)
+      const CONFIDENCE_THRESHOLD = 0.85
+      if (!bestMatch || bestMatch.confidence < CONFIDENCE_THRESHOLD) {
+        toast.error('Face not recognized. Please try again or use PIN.')
+        setScanning(false)
+        return
+      }
 
-      // Check if already checked in today
-      const today = new Date().toISOString().split('T')[0]
-      const attendanceData = localStorage.getItem('holykids_attendance')
-      const attendance = attendanceData ? JSON.parse(attendanceData) : []
-      
-      const existingCheckIn = attendance.find(
-        (a: any) => a.staff_id === staff.id && a.date === today && a.check_in_time
-      )
-
-      if (existingCheckIn) {
-        const time = new Date(existingCheckIn.check_in_time).toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+      // Clock in via API
+      const clockResponse = await fetch('/api/face/clock-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: bestMatch.id,
+          clock_type: 'check_in',
+          method: 'face',
+          device_id: getDeviceId()
         })
-        toast.error(`${staff.first_name} already clocked in today at ${time}`)
-        setScanning(false)
-        return
-      }
-
-      // Record check-in
-      const checkInTime = new Date()
-      const checkIn = {
-        id: Date.now().toString(),
-        staff_id: staff.id,
-        staff_name: `${staff.first_name} ${staff.last_name}`,
-        staff_department: staff.department,
-        check_in_time: checkInTime.toISOString(),
-        date: today,
-        status: 'present',
-        method: 'biometric'
-      }
-
-      attendance.push(checkIn)
-      localStorage.setItem('holykids_attendance', JSON.stringify(attendance))
-
-      console.log('✅ Check-in recorded:', checkIn)
-
-      // Show success
-      setLastCheckIn({
-        name: `${staff.first_name} ${staff.last_name}`,
-        department: staff.department,
-        time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        date: checkInTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
       })
-      setShowSuccess(true)
-      
-      toast.success(`✅ Welcome ${staff.first_name}!`)
-      
-      // Auto-reset after 3 seconds
-      setTimeout(() => {
-        setShowSuccess(false)
-        setLastCheckIn(null)
+
+      const result = await clockResponse.json()
+
+      if (clockResponse.ok && result.success) {
+        const staff = result.staff
+        setLastCheckIn({
+          name: staff.full_name,
+          department: staff.department,
+          time: new Date(staff.clock_in_time).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          date: new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric' 
+          }),
+          is_late: staff.is_late,
+          confidence: Math.round(bestMatch.confidence * 100)
+        })
+        setShowSuccess(true)
+        toast.success('✅ Clocked in successfully!')
+        stopCamera()
+
+        setTimeout(() => {
+          setShowSuccess(false)
+          setLastCheckIn(null)
+          setScanning(false)
+        }, 3000)
+      } else {
+        toast.error(result.error || 'Clock-in failed')
         setScanning(false)
-        // Reload enrolled staff in case new enrollments
-        loadEnrolledStaff()
-      }, 3000)
-      
-    } catch (error: any) {
-      console.error('❌ Biometric scan error:', error)
-      toast.error('Scan failed. Please try again or use PIN.')
+      }
+    } catch (error) {
+      console.error('Face scan error:', error)
+      toast.error('Scan failed. Please try again.')
       setScanning(false)
     }
   }
 
+  const compareFaceEmbeddings = (embedding1: number[], embedding2: number[]): number => {
+    let sum = 0
+    for (let i = 0; i < embedding1.length; i++) {
+      const diff = embedding1[i] - embedding2[i]
+      sum += diff * diff
+    }
+    const distance = Math.sqrt(sum)
+    return Math.max(0, 1 - distance / 0.6)
+  }
+
+  const getDeviceId = (): string => {
+    const nav = navigator
+    const screen = window.screen
+    const fingerprint = [
+      nav.userAgent,
+      nav.language,
+      screen.colorDepth,
+      screen.width,
+      screen.height,
+      new Date().getTimezoneOffset()
+    ].join('|')
+    
+    let hash = 0
+    for (let i = 0; i < fingerprint.length; i++) {
+      const char = fingerprint.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    
+    return `device_${Math.abs(hash).toString(36)}`
+  }
+
   const handlePinEntry = () => {
-    router.push('/staff/check-in')
+    router.push('/pin-clock-in')
   }
 
   return (
@@ -164,7 +283,7 @@ export default function ClockInPage() {
           {/* Title */}
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
-              ⏱️ Clock In
+              📸 Face Clock In
             </h1>
             <p className="text-white/90 text-lg md:text-xl font-medium">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -204,71 +323,101 @@ export default function ClockInPage() {
                   <p className="text-green-600 dark:text-green-500 text-base">
                     {lastCheckIn.date}
                   </p>
+                  {lastCheckIn.is_late && (
+                    <p className="text-yellow-600 dark:text-yellow-500 text-sm mt-2">
+                      ⚠️ Late Arrival
+                    </p>
+                  )}
+                  <p className="text-gray-500 dark:text-gray-400 text-xs mt-2">
+                    Match: {lastCheckIn.confidence}%
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Scan Button - FULL SCREEN FOCUS */}
-          {!showSuccess && (
+          {/* Camera Section */}
+          {!showSuccess && !cameraActive && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 md:p-12">
               <div className="text-center">
-                
-                {/* Large Fingerprint Icon */}
-                <div className="relative mb-8">
-                  <div className={`w-40 h-40 md:w-48 md:h-48 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
-                    scanning 
-                      ? 'bg-gradient-to-br from-purple-500 to-indigo-500 animate-pulse scale-110' 
-                      : 'bg-gradient-to-br from-purple-600 to-indigo-600 hover:scale-105'
-                  }`}>
-                    <span className="text-8xl md:text-9xl">👆</span>
-                  </div>
-                  {scanning && (
-                    <>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-48 h-48 md:w-56 md:h-56 border-4 border-purple-300 dark:border-purple-700 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-56 h-56 md:w-64 md:h-64 border-4 border-blue-300 dark:border-blue-700 border-t-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-                      </div>
-                    </>
-                  )}
+                <div className="w-32 h-32 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-7xl">📸</span>
                 </div>
-
-                {/* Instructions */}
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-3">
-                  {scanning ? 'Scanning...' : 'Place Your Finger'}
+                  Position Your Face
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg mb-8">
-                  {scanning ? 'Please wait while we verify your fingerprint' : 'Touch the button below to clock in'}
+                  Look directly at the camera for recognition
                 </p>
-
-                {/* Big Scan Button */}
                 <button
-                  onClick={handleBiometricScan}
-                  disabled={scanning}
-                  className="w-full py-6 md:py-8 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xl md:text-2xl"
+                  onClick={startCamera}
+                  className="w-full py-6 md:py-8 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 text-xl md:text-2xl"
                 >
-                  {scanning ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin h-6 w-6 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Scanning Fingerprint...
-                    </span>
-                  ) : (
-                    '👆 Scan Fingerprint'
-                  )}
+                  📸 Start Camera
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Camera Active */}
+          {!showSuccess && cameraActive && (
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6">
+              <div className="relative mb-4">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full rounded-xl"
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full"
+                />
+                
+                {faceDetected && !scanning && (
+                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    ✓ Face Detected
+                  </div>
+                )}
+                
+                {!faceDetected && !scanning && (
+                  <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    ⚠ No Face
+                  </div>
+                )}
+
+                {scanning && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                    <div className="text-center">
+                      <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-white font-medium">Recognizing...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleFaceScan}
+                disabled={scanning || !faceDetected}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-3"
+              >
+                {scanning ? 'Scanning...' : '✓ Clock In'}
+              </button>
+
+              <button
+                onClick={stopCamera}
+                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
             </div>
           )}
 
           {/* Alternative PIN Entry */}
           {!showSuccess && (
             <div className="text-center mt-6">
-              <p className="text-white/70 text-sm mb-3">Fingerprint not working?</p>
+              <p className="text-white/70 text-sm mb-3">Face recognition not working?</p>
               <button
                 onClick={handlePinEntry}
                 className="text-white hover:text-white/80 underline text-base font-medium transition-colors"
@@ -284,7 +433,7 @@ export default function ClockInPage() {
       {/* Footer */}
       <div className="p-4 text-center">
         <p className="text-white/40 text-xs">
-          HOLYKIDS Staff Attendance System
+          HOLYKIDS Facial Recognition Attendance System
         </p>
       </div>
     </div>
