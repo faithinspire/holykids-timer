@@ -6,10 +6,10 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import * as faceapi from 'face-api.js'
 
-const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
+const ThemeToggle = dynamicImport(() => import('@/components/ui/ThemeToggle'), { ssr: false })
 
 interface EnrolledFace {
   id: string

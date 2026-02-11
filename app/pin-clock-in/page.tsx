@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 
-const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
+const ThemeToggle = dynamicImport(() => import('@/components/ui/ThemeToggle'), { ssr: false })
 
 export default function PinClockInPage() {
   const router = useRouter()
