@@ -1,15 +1,19 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function CameraDebugPage() {
-  const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [logs, setLogs] = useState<string[]>([])
   const [cameraActive, setCameraActive] = useState(false)
+  const [error, setError] = useState('')
+  const [logs, setLogs] = useState<string[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [permissions, setPermissions] = useState<string>('unknown')
+
+  useEffect(() => {
+    checkPermissions()
+    listDevices()
+  }, [])
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString()
@@ -17,84 +21,91 @@ export default function CameraDebugPage() {
     console.log(message)
   }
 
-  useEffect(() => {
-    checkPermissions()
-    listDevices()
-  }, [])
-
   const checkPermissions = async () => {
     try {
-      addLog('Checking camera permissions...')
-      const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
-      setPermissions(result.state)
-      addLog(`Permission state: ${result.state}`)
-      
-      result.addEventListener('change', () => {
+      if (navigator.permissions) {
+        const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
         setPermissions(result.state)
-        addLog(`Permission changed to: ${result.state}`)
-      })
-    } catch (error: any) {
-      addLog(`Permission check error: ${error.message}`)
+        addLog(`Camera permission: ${result.state}`)
+      } else {
+        addLog('Permissions API not supported')
+      }
+    } catch (err) {
+      addLog('Could not check permissions')
     }
   }
 
   const listDevices = async () => {
     try {
-      addLog('Listing media devices...')
       const deviceList = await navigator.mediaDevices.enumerateDevices()
-      const cameras = deviceList.filter(d => d.kind === 'videoinput')
-      setDevices(cameras)
-      addLog(`Found ${cameras.length} camera(s)`)
-      cameras.forEach((cam, i) => {
-        addLog(`Camera ${i + 1}: ${cam.label || 'Unknown'} (${cam.deviceId.substring(0, 8)}...)`)
+      const videoDevices = deviceList.filter(d => d.kind === 'videoinput')
+      setDevices(videoDevices)
+      addLog(`Found ${videoDevices.length} camera(s)`)
+      videoDevices.forEach((d, i) => {
+        addLog(`Camera ${i + 1}: ${d.label || 'Unknown'}`)
       })
-    } catch (error: any) {
-      addLog(`Device list error: ${error.message}`)
+    } catch (err: any) {
+      addLog(`Error listing devices: ${err.message}`)
     }
   }
 
-  const testCamera = async (deviceId?: string) => {
+  const startCamera = async () => {
     try {
-      addLog('Requesting camera access...')
+      setError('')
+      addLog('🎥 Requesting camera access...')
       
-      const constraints: MediaStreamConstraints = {
-        video: deviceId 
-          ? { deviceId: { exact: deviceId } }
-          : { facingMode: 'user', width: 640, height: 480 }
+      const constraints = {
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
       }
       
       addLog(`Constraints: ${JSON.stringify(constraints)}`)
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      addLog('✅ Camera access granted!')
+      
+      addLog('✅ Got media stream')
+      addLog(`Stream active: ${stream.active}`)
+      addLog(`Video tracks: ${stream.getVideoTracks().length}`)
+      
+      if (stream.getVideoTracks().length > 0) {
+        const track = stream.getVideoTracks()[0]
+        addLog(`Track label: ${track.label}`)
+        addLog(`Track enabled: ${track.enabled}`)
+        addLog(`Track ready state: ${track.readyState}`)
+        addLog(`Track settings: ${JSON.stringify(track.getSettings())}`)
+      }
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        addLog('Video element connected')
+        addLog('✅ Stream assigned to video element')
         
         videoRef.current.onloadedmetadata = () => {
+          addLog('✅ Video metadata loaded')
           addLog(`Video dimensions: ${videoRef.current?.videoWidth}x${videoRef.current?.videoHeight}`)
         }
         
         videoRef.current.onplay = () => {
-          addLog('Video playing')
+          addLog('✅ Video playing')
         }
         
         setCameraActive(true)
-        
-        // Re-list devices to get labels
-        await listDevices()
+        addLog('✅ Camera should be visible now!')
       }
-    } catch (error: any) {
-      addLog(`❌ Camera error: ${error.name}`)
-      addLog(`Error message: ${error.message}`)
+    } catch (err: any) {
+      const errorMsg = `❌ Camera error: ${err.name} - ${err.message}`
+      addLog(errorMsg)
+      setError(errorMsg)
       
-      if (error.name === 'NotAllowedError') {
-        addLog('⚠️ SOLUTION: Allow camera permission in browser settings')
-      } else if (error.name === 'NotFoundError') {
-        addLog('⚠️ SOLUTION: No camera found on device')
-      } else if (error.name === 'NotReadableError') {
-        addLog('⚠️ SOLUTION: Camera in use by another app')
+      if (err.name === 'NotAllowedError') {
+        addLog('User denied camera permission')
+      } else if (err.name === 'NotFoundError') {
+        addLog('No camera found on device')
+      } else if (err.name === 'NotReadableError') {
+        addLog('Camera is in use by another app')
       }
     }
   }
@@ -104,7 +115,7 @@ export default function CameraDebugPage() {
       const stream = videoRef.current.srcObject as MediaStream
       stream.getTracks().forEach(track => {
         track.stop()
-        addLog(`Stopped track: ${track.kind}`)
+        addLog(`Stopped track: ${track.label}`)
       })
       videoRef.current.srcObject = null
       setCameraActive(false)
@@ -115,111 +126,94 @@ export default function CameraDebugPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">📹 Camera Debug Tool</h1>
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600"
-          >
-            ← Back
-          </button>
-        </div>
-
-        {/* Permission Status */}
+        <h1 className="text-3xl font-bold mb-4">📹 Camera Debug Tool</h1>
+        
+        {/* System Info */}
         <div className="bg-gray-800 rounded-lg p-4 mb-4">
-          <h2 className="text-xl font-bold mb-2">Permission Status</h2>
-          <div className={`text-lg font-mono ${
-            permissions === 'granted' ? 'text-green-400' : 
-            permissions === 'denied' ? 'text-red-400' : 
-            'text-yellow-400'
-          }`}>
-            {permissions.toUpperCase()}
+          <h2 className="text-xl font-bold mb-2">System Info</h2>
+          <div className="text-sm space-y-1">
+            <p>User Agent: {navigator.userAgent}</p>
+            <p>Platform: {navigator.platform}</p>
+            <p>Camera Permission: {permissions}</p>
+            <p>Cameras Found: {devices.length}</p>
+            <p>MediaDevices API: {navigator.mediaDevices ? '✅ Available' : '❌ Not Available'}</p>
           </div>
         </div>
 
-        {/* Available Cameras */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-4">
-          <h2 className="text-xl font-bold mb-2">Available Cameras ({devices.length})</h2>
-          {devices.length === 0 ? (
-            <p className="text-gray-400">No cameras detected or permission not granted</p>
+        {/* Controls */}
+        <div className="mb-4 space-x-2">
+          {!cameraActive ? (
+            <button
+              onClick={startCamera}
+              className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-bold"
+            >
+              🎥 START CAMERA
+            </button>
           ) : (
-            <div className="space-y-2">
-              {devices.map((device, i) => (
-                <div key={device.deviceId} className="flex items-center justify-between bg-gray-700 p-3 rounded">
-                  <div>
-                    <div className="font-medium">{device.label || `Camera ${i + 1}`}</div>
-                    <div className="text-sm text-gray-400">{device.deviceId.substring(0, 20)}...</div>
-                  </div>
-                  <button
-                    onClick={() => testCamera(device.deviceId)}
-                    className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
-                  >
-                    Test
-                  </button>
-                </div>
-              ))}
-            </div>
+            <button
+              onClick={stopCamera}
+              className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-bold"
+            >
+              ⏹️ STOP CAMERA
+            </button>
           )}
-        </div>
-
-        {/* Test Buttons */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
           <button
-            onClick={() => testCamera()}
-            className="bg-green-600 py-4 rounded-lg font-bold text-lg hover:bg-green-500"
+            onClick={() => {
+              setLogs([])
+              checkPermissions()
+              listDevices()
+            }}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-bold"
           >
-            🎥 Test Default Camera
-          </button>
-          <button
-            onClick={stopCamera}
-            disabled={!cameraActive}
-            className="bg-red-600 py-4 rounded-lg font-bold text-lg hover:bg-red-500 disabled:opacity-50"
-          >
-            ⏹️ Stop Camera
+            🔄 REFRESH
           </button>
         </div>
 
-        {/* Video Preview */}
-        <div className="bg-black rounded-lg overflow-hidden mb-4" style={{ minHeight: '300px' }}>
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-600 text-white p-4 rounded-lg mb-4">
+            <h3 className="font-bold mb-2">Error:</h3>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Video Display */}
+        <div className="bg-black rounded-lg overflow-hidden mb-4">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
             className="w-full"
-            style={{ display: 'block' }}
+            style={{ 
+              minHeight: '300px', 
+              maxHeight: '500px',
+              display: 'block',
+              backgroundColor: '#000'
+            }}
           />
           {!cameraActive && (
             <div className="flex items-center justify-center h-64 text-gray-500">
-              Camera preview will appear here
+              Camera not started
             </div>
           )}
         </div>
 
-        {/* Debug Logs */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold">Debug Logs</h2>
-            <button
-              onClick={() => setLogs([])}
-              className="text-sm bg-gray-700 px-3 py-1 rounded hover:bg-gray-600"
-            >
-              Clear
-            </button>
+        {cameraActive && (
+          <div className="bg-green-600 text-white p-4 rounded-lg mb-4 text-center">
+            ✅ CAMERA IS ACTIVE - Can you see the video above?
           </div>
-          <div className="bg-black rounded p-3 font-mono text-sm space-y-1 max-h-96 overflow-y-auto">
+        )}
+
+        {/* Logs */}
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h2 className="text-xl font-bold mb-2">Debug Logs</h2>
+          <div className="bg-black rounded p-3 font-mono text-xs space-y-1 max-h-96 overflow-y-auto">
             {logs.length === 0 ? (
-              <div className="text-gray-500">No logs yet...</div>
+              <p className="text-gray-500">No logs yet...</p>
             ) : (
               logs.map((log, i) => (
-                <div key={i} className={
-                  log.includes('✅') ? 'text-green-400' :
-                  log.includes('❌') ? 'text-red-400' :
-                  log.includes('⚠️') ? 'text-yellow-400' :
-                  'text-gray-300'
-                }>
-                  {log}
-                </div>
+                <div key={i} className="text-green-400">{log}</div>
               ))
             )}
           </div>
@@ -227,15 +221,14 @@ export default function CameraDebugPage() {
 
         {/* Instructions */}
         <div className="mt-4 bg-blue-900/50 rounded-lg p-4">
-          <h3 className="font-bold mb-2">📋 Troubleshooting Steps:</h3>
-          <ol className="list-decimal list-inside space-y-1 text-sm">
-            <li>Check permission status above (should be "GRANTED")</li>
-            <li>If "DENIED": Go to browser settings and allow camera</li>
-            <li>If "PROMPT": Click test button and allow when asked</li>
-            <li>Try each camera if multiple are listed</li>
-            <li>Check debug logs for specific error messages</li>
-            <li>If camera works here, the issue is with face-api.js</li>
-          </ol>
+          <h3 className="font-bold mb-2">📋 Instructions:</h3>
+          <ul className="text-sm space-y-1">
+            <li>1. Click "START CAMERA" button</li>
+            <li>2. Allow camera permission when prompted</li>
+            <li>3. Check if video appears in the black box above</li>
+            <li>4. Review debug logs for any errors</li>
+            <li>5. Take a screenshot and share with support if issues persist</li>
+          </ul>
         </div>
       </div>
     </div>
