@@ -283,7 +283,7 @@ export default function ClockInPage() {
           {/* Title */}
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
-              📸 Face Clock In
+              📸 Face Recognition
             </h1>
             <p className="text-white/90 text-lg md:text-xl font-medium">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
