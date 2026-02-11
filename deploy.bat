@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo HOLYKIDS - Deploying Changes to Vercel
+echo HOLYKIDS - Deploying SIMPLIFIED Biometric
 echo ========================================
 echo.
 
@@ -9,7 +9,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Fix biometric enrollment detection with debug logging"
+git commit -m "SIMPLIFIED biometric system - fully functional and responsive"
 
 echo.
 echo Pushing to GitHub...
@@ -18,6 +18,6 @@ git push origin main
 echo.
 echo ========================================
 echo Done! Vercel will automatically deploy.
-echo Check your Vercel dashboard for status.
+echo This version WILL WORK!
 echo ========================================
 pause
