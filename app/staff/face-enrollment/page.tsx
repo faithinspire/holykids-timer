@@ -94,30 +94,24 @@ export default function FaceEnrollmentPage() {
       }
       
       console.log('Requesting camera access...')
-      toast.loading('Starting camera...')
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
         setStream(mediaStream)
+        setCameraActive(true)  // Show camera IMMEDIATELY
         
-        // Wait for video to be ready before starting detection
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setCameraActive(true)
-            toast.dismiss()
-            toast.success('Camera ready!')
-            console.log('✅ Camera started successfully')
-            // Start face detection after a short delay
-            setTimeout(() => {
-              startFaceDetection()
-            }, 500)
-          }).catch(err => {
-            console.error('Play error:', err)
-            toast.dismiss()
-            toast.error('Could not start video')
-          })
-        }
+        console.log('✅ Camera stream set')
+        toast.dismiss()
+        toast.success('Camera ready!')
+        
+        // Start face detection after short delay
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            startFaceDetection()
+            console.log('✅ Face detection started')
+          }
+        }, 1000)
       }
     } catch (error) {
       console.error('❌ Camera error:', error)

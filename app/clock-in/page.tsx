@@ -97,21 +97,17 @@ export default function ClockInPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
         setStream(mediaStream)
+        setCameraActive(true)  // Show camera IMMEDIATELY
         
-        // Wait for video to be ready before starting detection
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setCameraActive(true)
-            console.log('✅ Camera started successfully')
-            // Start face detection after a short delay
-            setTimeout(() => {
-              detectFace()
-            }, 500)
-          }).catch(err => {
-            console.error('Play error:', err)
-            toast.error('Could not start video')
-          })
-        }
+        console.log('✅ Camera stream set')
+        
+        // Start face detection after short delay
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            detectFace()
+            console.log('✅ Face detection started')
+          }
+        }, 1000)
       }
     } catch (error) {
       console.error('❌ Camera error:', error)
