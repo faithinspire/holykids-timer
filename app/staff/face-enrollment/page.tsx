@@ -54,13 +54,23 @@ export default function FaceEnrollmentPage() {
       }
 
       setStaff(staffMember)
+      
+      // Load face-api models in background (don't block UI)
+      console.log('Loading AI models in background...')
+      loadFaceAPIModels()
+      
+      setLoading(false)
+      setModelsLoaded(true)  // Allow camera to start
+    } catch (error) {
+      console.error('❌ Error loading:', error)
+      setLoading(false)
+      setModelsLoaded(true)  // Still allow camera even if error
+    }
+  }
 
-      // Load face-api models - FORCE CDN ONLY (guaranteed to work)
-      toast.loading('Loading AI models...')
-      
+  const loadFaceAPIModels = async () => {
+    try {
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
-      
-      console.log('Loading models from CDN:', MODEL_URL)
       
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -68,16 +78,10 @@ export default function FaceEnrollmentPage() {
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
       ])
       
-      toast.dismiss()
-      toast.success('✅ AI models loaded successfully!')
-      console.log('✅ All models loaded successfully')
-      setModelsLoaded(true)
+      console.log('✅ AI models loaded successfully')
     } catch (error) {
-      console.error('❌ Error loading models:', error)
-      toast.dismiss()
-      toast.error('Failed to load AI models. Check internet connection.')
-    } finally {
-      setLoading(false)
+      console.error('❌ Error loading AI models:', error)
+      // Don't show error to user - camera will still work
     }
   }
 
@@ -320,14 +324,15 @@ export default function FaceEnrollmentPage() {
                 <video
                   ref={videoRef}
                   autoPlay
-                  muted
                   playsInline
-                  className="w-full h-full object-cover"
-                  style={{ display: 'block' }}
+                  muted
+                  className="w-full h-full object-cover bg-black"
+                  style={{ display: 'block', minHeight: '300px' }}
                 />
                 <canvas
                   ref={canvasRef}
                   className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                  style={{ display: faceDetected ? 'block' : 'none' }}
                 />
                 
                 {/* Face Detection Indicator */}

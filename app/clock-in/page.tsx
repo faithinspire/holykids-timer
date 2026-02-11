@@ -34,25 +34,25 @@ export default function ClockInPage() {
       const faceapiModule = await import('face-api.js')
       setFaceapi(faceapiModule)
       
-      // FORCE CDN ONLY - guaranteed to work
+      // Load models in background (don't block UI)
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
       
-      console.log('Loading models from CDN:', MODEL_URL)
-      toast.loading('Loading AI models...')
+      console.log('Loading AI models in background...')
       
-      await Promise.all([
+      Promise.all([
         faceapiModule.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
         faceapiModule.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
         faceapiModule.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-      ])
-      
-      toast.dismiss()
-      console.log('✅ Models loaded successfully')
-      await loadEnrolledStaff()
+      ]).then(() => {
+        console.log('✅ Models loaded successfully')
+        loadEnrolledStaff()
+      }).catch(error => {
+        console.error('❌ Error loading models:', error)
+        // Don't block - camera will still work
+      })
     } catch (error) {
       console.error('❌ Error loading face-api:', error)
-      toast.dismiss()
-      toast.error('Failed to load AI models. Check internet connection.')
+      // Don't show error - allow camera to work anyway
     }
   }
 
@@ -408,14 +408,15 @@ export default function ClockInPage() {
                   <video
                     ref={videoRef}
                     autoPlay
-                    muted
                     playsInline
-                    className="w-full h-full object-cover"
-                    style={{ display: 'block' }}
+                    muted
+                    className="w-full h-full object-cover bg-black"
+                    style={{ display: 'block', minHeight: '300px' }}
                   />
                   <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                    style={{ display: faceDetected ? 'block' : 'none' }}
                   />
                   
                   {/* Face Detection Indicator */}
