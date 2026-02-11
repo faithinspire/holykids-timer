@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
+const supabase = getSupabaseClient()
+
 // Organization name - can be configured in settings
 const ORGANIZATION_NAME = 'HOLYKIDS'
 
@@ -55,29 +57,91 @@ export default function AdminReportsPage() {
     try {
       setLoading(true)
       
-      // Load staff from Supabase
-      const { data: staffData } = await supabase
-        .from('staff')
-        .select('id, staff_id, first_name, last_name, department, email')
-        .eq('is_active', true)
-
-      if (staffData && staffData.length > 0) {
-        setStaffList(staffData)
+      // Load staff from API (Supabase)
+      try {
+        const response = await fetch('/api/staff')
+        const data = await response.json()
+        if (data.staff && data.staff.length > 0) {
+          setStaffList(data.staff)
+        }
+      } catch (error) {
+        console.log('Could not fetch staff from API')
       }
-      // Load attendance from Supabase
-      const { data: attendance } = await supabase
-        .from('attendance')
-        .select('*, staff:staff_id(first_name, last_name, department)')
-        .gte('attendance_date', dateRange.start)
-        .lte('attendance_date', dateRange.end)
-        .order('attendance_date', { ascending: false })
 
-      if (attendance && attendance.length > 0) {
-        setAttendanceData(attendance)
+      // Also check localStorage for staff
+      const localStaffData = localStorage.getItem('holykids_staff')
+      if (localStaffData) {
+        const localStaff = JSON.parse(localStaffData)
+        if (localStaff.length > 0) {
+          // Merge with existing staff list (avoid duplicates)
+          setStaffList(prev => {
+            const combined = [...prev, ...localStaff]
+            const unique = combined.filter((staff, index, self) =>
+              index === self.findIndex(s => s.id === staff.id || s.staff_id === staff.staff_id)
+            )
+            return unique
+          })
+        }
       }
-      // If no data, show empty state (no demo data)
+
+      // Load attendance from localStorage
+      const localAttendanceData = localStorage.getItem('holykids_attendance')
+      if (localAttendanceData) {
+        const localAttendance = JSON.parse(localAttendanceData)
+        
+        // Filter by date range
+        const filtered = localAttendance.filter((a: any) => {
+          const attendanceDate = a.date || a.attendance_date
+          return attendanceDate >= dateRange.start && attendanceDate <= dateRange.end
+        })
+
+        // Transform to match expected format
+        const transformed = filtered.map((a: any) => ({
+          id: a.id,
+          staff_id: a.staff_id,
+          attendance_date: a.date || a.attendance_date,
+          check_in_time: a.check_in_time,
+          check_out_time: a.check_out_time || null,
+          status: a.status || 'present',
+          is_late: a.is_late || false,
+          staff: {
+            first_name: a.staff_name ? a.staff_name.split(' ')[0] : '',
+            last_name: a.staff_name ? a.staff_name.split(' ').slice(1).join(' ') : '',
+            department: a.staff_department || ''
+          }
+        }))
+
+        setAttendanceData(transformed)
+        console.log('📊 Loaded', transformed.length, 'attendance records from localStorage')
+      }
+
+      // Try to load from Supabase as well
+      if (supabase) {
+        try {
+          const { data: attendance } = await supabase
+            .from('attendance')
+            .select('*, staff:staff_id(first_name, last_name, department)')
+            .gte('attendance_date', dateRange.start)
+            .lte('attendance_date', dateRange.end)
+            .order('attendance_date', { ascending: false })
+
+          if (attendance && attendance.length > 0) {
+            // Merge with localStorage data
+            setAttendanceData(prev => {
+              const combined = [...prev, ...attendance]
+              const unique = combined.filter((record, index, self) =>
+                index === self.findIndex(r => r.id === record.id)
+              )
+              return unique
+            })
+            console.log('📊 Loaded', attendance.length, 'attendance records from Supabase')
+          }
+        } catch (error) {
+          console.log('Could not fetch attendance from Supabase')
+        }
+      }
     } catch (error) {
-      // No demo data - show empty state
+      console.error('Error loading data:', error)
     } finally {
       setLoading(false)
     }

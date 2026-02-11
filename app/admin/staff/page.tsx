@@ -39,9 +39,9 @@ export default function AdminStaffPage() {
     first_name: '',
     last_name: '',
     email: '',
-    department: '',
+    department: [] as string[], // Changed to array for multiple departments
     phone: '',
-    role: 'Support Staff'
+    role: 'Teacher'
   })
   const [newPin, setNewPin] = useState('')
 
@@ -90,8 +90,8 @@ export default function AdminStaffPage() {
   const handleAddStaff = async () => {
     console.log('Add staff clicked', newStaff)
     
-    if (!newStaff.first_name || !newStaff.last_name || !newStaff.department) {
-      toast.error('Please fill in First Name, Last Name, and Department')
+    if (!newStaff.first_name || !newStaff.last_name || newStaff.department.length === 0) {
+      toast.error('Please fill in First Name, Last Name, and at least one Department')
       return
     }
 
@@ -201,7 +201,23 @@ export default function AdminStaffPage() {
     window.location.href = '/staff/biometric-setup'
   }
 
-  const departments = ['Administration', 'Science', 'Mathematics', 'English', 'Social Studies', 'Arts', 'Physical Education', 'Religious Studies']
+  const departments = [
+    'ICT',
+    'Economics', 
+    'Commerce',
+    'Chemistry',
+    'Biology',
+    'Physics',
+    'Mathematics',
+    'English',
+    'Social Studies',
+    'Arts',
+    'Physical Education',
+    'Religious Studies',
+    'Administration',
+    'Library',
+    'Laboratory'
+  ]
 
   if (loading) {
     return (
@@ -286,7 +302,17 @@ export default function AdminStaffPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden-mobile">
-                      <p className="text-sm text-gray-600">{member.department}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.isArray(member.department) ? (
+                          member.department.map((dept, idx) => (
+                            <span key={idx} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                              {dept}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-gray-600">{member.department}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -387,17 +413,44 @@ export default function AdminStaffPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Department *</label>
-                <select
-                  value={newStaff.department}
-                  onChange={(e) => setNewStaff({ ...newStaff, department: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="">Select Department</option>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Departments * (Select at least 1, can select multiple)
+                </label>
+                <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
                   {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <label key={dept} className="flex items-center py-2 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newStaff.department.includes(dept)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStaff({ ...newStaff, department: [...newStaff.department, dept] })
+                          } else {
+                            setNewStaff({ ...newStaff, department: newStaff.department.filter(d => d !== dept) })
+                          }
+                        }}
+                        className="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{dept}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                {newStaff.department.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {newStaff.department.map(dept => (
+                      <span key={dept} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {dept}
+                        <button
+                          type="button"
+                          onClick={() => setNewStaff({ ...newStaff, department: newStaff.department.filter(d => d !== dept) })}
+                          className="ml-1 text-purple-600 hover:text-purple-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
@@ -416,13 +469,18 @@ export default function AdminStaffPage() {
                   onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
-                  <option value="Support Staff">Support Staff</option>
                   <option value="Teacher">Teacher</option>
+                  <option value="Principal">Principal</option>
+                  <option value="Vice Principal">Vice Principal</option>
                   <option value="Administrator">Administrator</option>
                   <option value="HR Manager">HR Manager</option>
                   <option value="Department Head">Department Head</option>
+                  <option value="Support Staff">Support Staff</option>
+                  <option value="Cleaner">Cleaner</option>
                   <option value="Security">Security</option>
                   <option value="Maintenance">Maintenance</option>
+                  <option value="Librarian">Librarian</option>
+                  <option value="Lab Technician">Lab Technician</option>
                 </select>
               </div>
             </div>
@@ -431,7 +489,7 @@ export default function AdminStaffPage() {
                 type="button"
                 onClick={() => {
                   setShowAddModal(false)
-                  setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'Support Staff' })
+                  setNewStaff({ first_name: '', last_name: '', email: '', department: [], phone: '', role: 'Teacher' })
                 }}
                 className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium active:bg-gray-100"
               >

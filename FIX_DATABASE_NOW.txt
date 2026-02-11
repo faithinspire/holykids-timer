@@ -1,0 +1,63 @@
+╔════════════════════════════════════════╗
+║   FIX DATABASE - 2 MINUTES             ║
+╚════════════════════════════════════════╝
+
+YOUR ERROR:
+"couldn't find enrolled_at column"
+
+THE PROBLEM:
+Your Supabase database is missing the
+biometric columns!
+
+THE FIX:
+Add 3 columns to your staff table
+
+═══════════════════════════════════════
+
+QUICK STEPS:
+
+1. Go to: https://supabase.com
+
+2. Login → Select your project
+
+3. Click "SQL Editor" (left sidebar)
+
+4. Click "+ New query"
+
+5. Copy and paste this:
+
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS biometric_enrolled BOOLEAN DEFAULT false;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS fingerprint_id TEXT;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS enrolled_at TIMESTAMPTZ;
+
+6. Click "Run" (or press Ctrl+Enter)
+
+7. Should see "Success"
+
+8. Done! ✅
+
+═══════════════════════════════════════
+
+NOW TEST:
+
+1. Go to your app
+2. Refresh (Ctrl+Shift+R)
+3. Staff Management → "Setup" → "Enroll Now"
+4. Should work! ✅
+5. Clock In → "Scan Fingerprint"
+6. Should find enrolled staff! ✅
+
+═══════════════════════════════════════
+
+FILES TO HELP:
+- ADD_BIOMETRIC_COLUMNS.sql (full SQL)
+- RUN_THIS_IN_SUPABASE.txt (step by step)
+- SUPABASE_SETUP_GUIDE.md (detailed guide)
+
+═══════════════════════════════════════
+
+THAT'S IT!
+Just run the SQL in Supabase.
+Then everything will work!
+
+🚀 DO IT NOW! 🚀

@@ -72,6 +72,9 @@ export async function POST(request: Request) {
     const staffId = `STF${Date.now().toString().slice(-4)}`
     const staffPin = pin || Math.floor(1000 + Math.random() * 9000).toString() // 4-digit PIN
 
+    // Convert department array to comma-separated string for database
+    const departmentString = Array.isArray(department) ? department.join(', ') : department
+
     // If Supabase is not configured, return local data
     if (!supabase) {
       console.log('Supabase not configured, staff will be stored locally')
@@ -81,9 +84,9 @@ export async function POST(request: Request) {
         first_name,
         last_name,
         email: email || `${staffId.toLowerCase()}@holykids.edu`,
-        department,
+        department: department, // Keep as array for local storage
         phone: phone || '',
-        role: role || 'Support Staff',
+        role: role || 'Teacher',
         pin: staffPin,
         biometric_enrolled: false,
         is_active: true,
@@ -107,9 +110,9 @@ export async function POST(request: Request) {
         first_name,
         last_name,
         email: email || `${staffId.toLowerCase()}@holykids.edu`,
-        department,
+        department: departmentString, // Store as comma-separated string
         phone: phone || '',
-        role: role || 'Support Staff',
+        role: role || 'Teacher',
         pin: staffPin,
         is_active: true,
         date_joined: new Date().toISOString().split('T')[0]
@@ -122,9 +125,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Return with department as array for frontend
+    const staffWithArrayDept = {
+      ...data,
+      department: data.department.includes(',') ? data.department.split(', ') : [data.department],
+      pin: staffPin
+    }
+
     return NextResponse.json({ 
       success: true, 
-      staff: { ...data, pin: staffPin },
+      staff: staffWithArrayDept,
       message: 'Staff registered successfully'
     })
   } catch (error: any) {

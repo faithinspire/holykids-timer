@@ -1,0 +1,98 @@
+╔════════════════════════════════════════╗
+║   ADD BIOMETRIC COLUMNS TO SUPABASE    ║
+╚════════════════════════════════════════╝
+
+ERROR: "couldn't find enrolled_at column"
+
+REASON: Your Supabase staff table is missing
+        the biometric columns!
+
+FIX: Add the columns using SQL
+
+┌────────────────────────────────────────┐
+│ STEP 1: Open Supabase                 │
+└────────────────────────────────────────┘
+
+1. Go to: https://supabase.com
+2. Login to your account
+3. Select your project (HOLYKIDS)
+
+┌────────────────────────────────────────┐
+│ STEP 2: Open SQL Editor                │
+└────────────────────────────────────────┘
+
+1. Click "SQL Editor" in left sidebar
+2. Click "New query" button
+
+┌────────────────────────────────────────┐
+│ STEP 3: Copy This SQL                  │
+└────────────────────────────────────────┘
+
+Copy EVERYTHING below:
+─────────────────────────────────────────
+ALTER TABLE staff 
+ADD COLUMN IF NOT EXISTS biometric_enrolled BOOLEAN DEFAULT false;
+
+ALTER TABLE staff 
+ADD COLUMN IF NOT EXISTS fingerprint_id TEXT;
+
+ALTER TABLE staff 
+ADD COLUMN IF NOT EXISTS enrolled_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_staff_biometric_enrolled 
+ON staff(biometric_enrolled) 
+WHERE biometric_enrolled = true;
+
+UPDATE staff 
+SET biometric_enrolled = false 
+WHERE biometric_enrolled IS NULL;
+─────────────────────────────────────────
+
+┌────────────────────────────────────────┐
+│ STEP 4: Paste and Run                 │
+└────────────────────────────────────────┘
+
+1. Paste the SQL in the editor
+2. Click "Run" button (or press Ctrl+Enter)
+3. Should see "Success. No rows returned"
+
+┌────────────────────────────────────────┐
+│ STEP 5: Verify Columns Added          │
+└────────────────────────────────────────┘
+
+Run this query to check:
+
+SELECT column_name 
+FROM information_schema.columns
+WHERE table_name = 'staff'
+AND column_name IN ('biometric_enrolled', 'fingerprint_id', 'enrolled_at');
+
+Should show:
+- biometric_enrolled
+- fingerprint_id
+- enrolled_at
+
+┌────────────────────────────────────────┐
+│ STEP 6: Test Your App                 │
+└────────────────────────────────────────┘
+
+1. Go to your app
+2. Refresh page (Ctrl+Shift+R)
+3. Go to Staff Management
+4. Click "Setup" for a staff
+5. Click "Enroll Now"
+6. Should work! ✅
+7. Go to Clock In
+8. Should see enrolled staff! ✅
+
+╔════════════════════════════════════════╗
+║  THAT'S IT! COLUMNS ADDED!             ║
+╚════════════════════════════════════════╝
+
+After adding columns:
+✅ Enrollment will save to database
+✅ Clock-in will find enrolled staff
+✅ Everything will work!
+
+IMPORTANT: You MUST run the SQL in Supabase
+           before the app will work!
