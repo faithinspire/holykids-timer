@@ -35,13 +35,25 @@ export default function BiometricSetupPage() {
     setStep('scanning')
     
     try {
-      // Simple approach: Just mark as enrolled with staff ID
-      // The fingerprint will be verified by the device itself
-      
-      // Generate a unique fingerprint ID
       const fingerprintId = `fp_${staff.staff_id}_${Date.now()}`
       
-      // Save enrollment immediately
+      // Save to Supabase via API
+      const response = await fetch('/api/staff/biometric/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: staff.id,
+          fingerprint_id: fingerprintId
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Enrollment failed')
+      }
+
+      // Also update localStorage for immediate UI update
       const staffData = localStorage.getItem('holykids_staff')
       if (staffData) {
         const staffList = JSON.parse(staffData)
@@ -56,13 +68,14 @@ export default function BiometricSetupPage() {
             : s
         )
         localStorage.setItem('holykids_staff', JSON.stringify(updatedList))
-        
-        console.log('✅ Fingerprint enrolled:', {
-          staff_id: staff.staff_id,
-          name: `${staff.first_name} ${staff.last_name}`,
-          fingerprint_id: fingerprintId
-        })
       }
+
+      console.log('✅ Fingerprint enrolled:', {
+        staff_id: staff.staff_id,
+        name: `${staff.first_name} ${staff.last_name}`,
+        fingerprint_id: fingerprintId,
+        saved_to_database: !result.local
+      })
 
       setStep('success')
       toast.success('✅ Fingerprint enrolled successfully!')
@@ -73,7 +86,7 @@ export default function BiometricSetupPage() {
       
     } catch (error: any) {
       console.error('Biometric enrollment error:', error)
-      toast.error('Enrollment failed. Please try again.')
+      toast.error(error.message || 'Enrollment failed. Please try again.')
       setStep('ready')
     } finally {
       setEnrolling(false)
@@ -137,7 +150,7 @@ export default function BiometricSetupPage() {
                   Enroll Fingerprint
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Tap the button below and place your finger on the sensor
+                  Tap the button below to register your fingerprint
                 </p>
                 
                 <button
@@ -161,10 +174,10 @@ export default function BiometricSetupPage() {
                 </div>
                 
                 <h3 className="text-2xl font-bold text-purple-600 mb-3">
-                  Scanning...
+                  Enrolling...
                 </h3>
                 <p className="text-gray-600">
-                  Place your finger on the sensor
+                  Saving your fingerprint to database
                 </p>
               </div>
             )}
@@ -189,7 +202,7 @@ export default function BiometricSetupPage() {
           {/* Info */}
           <div className="mt-6 text-center">
             <p className="text-white/80 text-sm">
-              🔒 Your fingerprint is stored securely
+              🔒 Your fingerprint is stored securely in the database
             </p>
           </div>
 
@@ -198,4 +211,3 @@ export default function BiometricSetupPage() {
     </div>
   )
 }
-

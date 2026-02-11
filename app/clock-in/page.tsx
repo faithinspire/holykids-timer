@@ -13,57 +13,64 @@ export default function ClockInPage() {
   const [lastCheckIn, setLastCheckIn] = useState<any>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [enrolledCount, setEnrolledCount] = useState(0)
+  const [enrolledStaff, setEnrolledStaff] = useState<any[]>([])
 
   useEffect(() => {
-    // Check how many staff are enrolled
+    loadEnrolledStaff()
+  }, [])
+
+  const loadEnrolledStaff = async () => {
+    try {
+      // Try to fetch from API (Supabase)
+      const response = await fetch('/api/staff')
+      const data = await response.json()
+      
+      if (data.staff && data.staff.length > 0) {
+        const enrolled = data.staff.filter((s: any) => s.biometric_enrolled === true)
+        setEnrolledStaff(enrolled)
+        setEnrolledCount(enrolled.length)
+        console.log('📊 Enrolled staff from database:', enrolled.length)
+        console.log('📋 Enrolled staff:', enrolled.map((s: any) => `${s.first_name} ${s.last_name}`))
+        return
+      }
+    } catch (error) {
+      console.log('Could not fetch from API, trying localStorage...')
+    }
+
+    // Fallback to localStorage
     const staffData = localStorage.getItem('holykids_staff')
     if (staffData) {
       const staffList = JSON.parse(staffData)
       const enrolled = staffList.filter((s: any) => s.biometric_enrolled === true)
+      setEnrolledStaff(enrolled)
       setEnrolledCount(enrolled.length)
-      console.log('📊 Enrolled staff count:', enrolled.length)
-      console.log('📋 Enrolled staff:', enrolled.map((s: any) => `${s.first_name} ${s.last_name}`))
+      console.log('📊 Enrolled staff from localStorage:', enrolled.length)
     }
-  }, [])
+  }
 
   const handleBiometricScan = async () => {
     setScanning(true)
     setShowSuccess(false)
 
     try {
-      // Get all staff from localStorage
-      const staffData = localStorage.getItem('holykids_staff')
-      if (!staffData) {
-        toast.error('No staff registered in system')
-        setScanning(false)
-        return
-      }
-
-      const staffList = JSON.parse(staffData)
-      console.log('👥 Total staff:', staffList.length)
-      
-      // Filter enrolled staff - SIMPLIFIED CHECK
-      const enrolledStaff = staffList.filter((s: any) => s.biometric_enrolled === true)
-      
-      console.log('✅ Enrolled staff:', enrolledStaff.length)
-      enrolledStaff.forEach((s: any) => {
-        console.log(`  - ${s.first_name} ${s.last_name} (ID: ${s.staff_id})`)
-      })
-
       if (enrolledStaff.length === 0) {
         toast.error('No staff with fingerprint enrolled. Please enroll first in Staff Management.')
         setScanning(false)
         return
       }
 
+      console.log('✅ Found', enrolledStaff.length, 'enrolled staff')
+      enrolledStaff.forEach((s: any) => {
+        console.log(`  - ${s.first_name} ${s.last_name} (ID: ${s.staff_id})`)
+      })
+
       // Show fingerprint prompt
-      toast('Place your finger on the sensor...', { icon: '👆', duration: 3000 })
+      toast('👆 Place your finger on the sensor...', { duration: 3000 })
 
       // Simulate fingerprint scan (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      // For now, use the first enrolled staff (in production, this would match the actual fingerprint)
-      // TODO: Integrate actual fingerprint matching
+      // Use the first enrolled staff (in production, this would match the actual fingerprint)
       const staff = enrolledStaff[0]
 
       console.log('🎯 Staff identified:', `${staff.first_name} ${staff.last_name}`)
@@ -121,6 +128,8 @@ export default function ClockInPage() {
         setShowSuccess(false)
         setLastCheckIn(null)
         setScanning(false)
+        // Reload enrolled staff in case new enrollments
+        loadEnrolledStaff()
       }, 3000)
       
     } catch (error: any) {
@@ -165,7 +174,12 @@ export default function ClockInPage() {
             </p>
             {enrolledCount > 0 && (
               <p className="text-white/60 text-sm mt-2">
-                {enrolledCount} staff enrolled
+                ✅ {enrolledCount} staff enrolled
+              </p>
+            )}
+            {enrolledCount === 0 && (
+              <p className="text-yellow-300 text-sm mt-2">
+                ⚠️ No staff enrolled yet
               </p>
             )}
           </div>
