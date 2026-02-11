@@ -96,10 +96,22 @@ export default function ClockInPage() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-        await videoRef.current.play()
         setStream(mediaStream)
-        setCameraActive(true)
-        console.log('✅ Camera started successfully')
+        
+        // Wait for video to be ready before starting detection
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setCameraActive(true)
+            console.log('✅ Camera started successfully')
+            // Start face detection after a short delay
+            setTimeout(() => {
+              detectFace()
+            }, 500)
+          }).catch(err => {
+            console.error('Play error:', err)
+            toast.error('Could not start video')
+          })
+        }
       }
     } catch (error) {
       console.error('❌ Camera error:', error)
@@ -396,17 +408,18 @@ export default function ClockInPage() {
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
               {/* Camera View - Simple Square Shape */}
               <div className="relative bg-black">
-                <div className="relative w-full aspect-square">
+                <div className="relative w-full aspect-square max-h-[80vh]">
                   <video
                     ref={videoRef}
                     autoPlay
                     muted
                     playsInline
                     className="w-full h-full object-cover"
+                    style={{ display: 'block' }}
                   />
                   <canvas
                     ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full"
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
                   />
                   
                   {/* Face Detection Indicator */}
@@ -426,7 +439,7 @@ export default function ClockInPage() {
 
                   {/* Guide Circle */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-64 border-4 border-white/50 rounded-full"></div>
+                    <div className="w-48 h-48 md:w-64 md:h-64 border-4 border-white/50 rounded-full"></div>
                   </div>
 
                   {/* Scanning Overlay */}

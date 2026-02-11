@@ -94,19 +94,34 @@ export default function FaceEnrollmentPage() {
       }
       
       console.log('Requesting camera access...')
+      toast.loading('Starting camera...')
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-        await videoRef.current.play()
         setStream(mediaStream)
-        setCameraActive(true)
-        startFaceDetection()
-        console.log('✅ Camera started successfully')
-        toast.success('Camera ready!')
+        
+        // Wait for video to be ready before starting detection
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setCameraActive(true)
+            toast.dismiss()
+            toast.success('Camera ready!')
+            console.log('✅ Camera started successfully')
+            // Start face detection after a short delay
+            setTimeout(() => {
+              startFaceDetection()
+            }, 500)
+          }).catch(err => {
+            console.error('Play error:', err)
+            toast.dismiss()
+            toast.error('Could not start video')
+          })
+        }
       }
     } catch (error) {
       console.error('❌ Camera error:', error)
+      toast.dismiss()
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
           toast.error('Camera permission denied. Please allow camera access.')
@@ -307,17 +322,18 @@ export default function FaceEnrollmentPage() {
           ) : (
             <div className="relative bg-black rounded-xl overflow-hidden">
               {/* Camera View - Simple Square Shape */}
-              <div className="relative w-full aspect-square">
+              <div className="relative w-full aspect-square max-h-[80vh]">
                 <video
                   ref={videoRef}
                   autoPlay
                   muted
                   playsInline
                   className="w-full h-full object-cover"
+                  style={{ display: 'block' }}
                 />
                 <canvas
                   ref={canvasRef}
-                  className="absolute top-0 left-0 w-full h-full"
+                  className="absolute top-0 left-0 w-full h-full pointer-events-none"
                 />
                 
                 {/* Face Detection Indicator */}
@@ -337,7 +353,7 @@ export default function FaceEnrollmentPage() {
 
                 {/* Guide Circle */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-64 h-64 border-4 border-white/50 rounded-full"></div>
+                  <div className="w-48 h-48 md:w-64 md:h-64 border-4 border-white/50 rounded-full"></div>
                 </div>
               </div>
             </div>
