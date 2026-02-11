@@ -1,0 +1,370 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import dynamic from 'next/dynamic'
+import * as faceapi from 'face-api.js'
+
+const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
+
+export default function FaceEnrollmentPage() {
+  const router = useRouter()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [loading, setLoading] = useState(true)
+  const [enrolling, setEnrolling] = useState(false)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [staff, setStaff] = useState<any>(null)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [faceDetected, setFaceDetected] = useState(false)
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+
+  useEffect(() => {
+    loadModelsAndStaff()
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [])
+
+  const loadModelsAndStaff = async () => {
+    try {
+      // Get staff ID from localStorage
+      const staffId = localStorage.getItem('face_enrollment_staff_id')
+      if (!staffId) {
+        toast.error('No staff selected for enrollment')
+        router.push('/admin/staff')
+        return
+      }
+
+      // Fetch staff details
+      const response = await fetch('/api/staff')
+      const data = await response.json()
+      const staffMember = data.staff?.find((s: any) => s.id === staffId)
+
+      if (!staffMember) {
+        toast.error('Staff not found')
+        router.push('/admin/staff')
+        return
+      }
+
+      setStaff(staffMember)
+
+      // Load face-api models
+      toast.loading('Loading face recognition models...')
+      await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+      await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
+      await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+      toast.dismiss()
+      toast.success('Models loaded!')
+      setModelsLoaded(true)
+    } catch (error) {
+      console.error('Error loading:', error)
+      toast.error('Failed to load face recognition')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
+      })
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+        setStream(mediaStream)
+        setCameraActive(true)
+        startFaceDetection()
+      }
+    } catch (error) {
+      console.error('Camera error:', error)
+      toast.error('Could not access camera')
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+      setCameraActive(false)
+    }
+  }
+
+  const startFaceDetection = () => {
+    const detectFace = async () => {
+      if (videoRef.current && canvasRef.current && cameraActive) {
+        const detection = await faceapi
+          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+
+        if (detection) {
+          setFaceDetected(true)
+          const dims = faceapi.matchDimensions(canvasRef.current, videoRef.current, true)
+          const resizedDetection = faceapi.resizeResults(detection, dims)
+          const ctx = canvasRef.current.getContext('2d')
+          if (ctx) {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+            faceapi.draw.drawDetections(canvasRef.current, resizedDetection)
+            faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetection)
+          }
+        } else {
+          setFaceDetected(false)
+        }
+
+        requestAnimationFrame(detectFace)
+      }
+    }
+    detectFace()
+  }
+
+  const handleEnroll = async () => {
+    if (!faceDetected) {
+      toast.error('No face detected. Please position your face in the frame.')
+      return
+    }
+
+    if (pin.length < 4 || pin.length > 6) {
+      toast.error('PIN must be 4-6 digits')
+      return
+    }
+
+    if (pin !== confirmPin) {
+      toast.error('PINs do not match')
+      return
+    }
+
+    setEnrolling(true)
+
+    try {
+      // Capture face embedding
+      const detection = await faceapi
+        .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+
+      if (!detection) {
+        toast.error('Could not detect face. Please try again.')
+        setEnrolling(false)
+        return
+      }
+
+      const embedding = Array.from(detection.descriptor)
+
+      // Hash PIN
+      const encoder = new TextEncoder()
+      const data = encoder.encode(pin)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const pinHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+      // Save to database
+      const response = await fetch('/api/face/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: staff.id,
+          face_embedding: embedding,
+          pin_hash: pinHash
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        toast.success('✅ Face and PIN enrolled successfully!')
+        stopCamera()
+        
+        // Also save to localStorage for offline
+        const localStaff = JSON.parse(localStorage.getItem('holykids_staff') || '[]')
+        const updatedStaff = localStaff.map((s: any) => 
+          s.id === staff.id 
+            ? { ...s, face_enrolled: true, face_embedding: JSON.stringify(embedding), pin_hash: pinHash }
+            : s
+        )
+        localStorage.setItem('holykids_staff', JSON.stringify(updatedStaff))
+        localStorage.setItem('face_enrolled_' + staff.id, JSON.stringify(embedding))
+
+        setTimeout(() => router.push('/admin/staff'), 2000)
+      } else {
+        toast.error(result.error || 'Enrollment failed')
+      }
+    } catch (error) {
+      console.error('Enrollment error:', error)
+      toast.error('Failed to enroll face')
+    } finally {
+      setEnrolling(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20">
+      {/* Header */}
+      <div className="shadow-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 dark:from-purple-800 dark:via-indigo-800 dark:to-blue-800">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button onClick={() => router.push('/admin/staff')} className="text-white hover:bg-white/10 p-2 rounded-lg">
+                ← Back
+              </button>
+              <div>
+                <h1 className="text-xl font-bold text-white">Face Enrollment</h1>
+                <p className="text-white/80 text-sm">Register facial recognition</p>
+              </div>
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 max-w-2xl mx-auto">
+        {/* Staff Info */}
+        {staff && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+                {staff.first_name[0]}{staff.last_name[0]}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                  {staff.first_name} {staff.last_name}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">{staff.department}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">Staff ID: {staff.staff_id}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Camera Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Step 1: Capture Your Face</h3>
+          
+          {!cameraActive ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-5xl">📸</span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Position your face in front of the camera
+              </p>
+              <button
+                onClick={startCamera}
+                disabled={!modelsLoaded}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+              >
+                {modelsLoaded ? 'Start Camera' : 'Loading...'}
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full rounded-lg"
+              />
+              <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 w-full h-full"
+              />
+              
+              {faceDetected && (
+                <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  ✓ Face Detected
+                </div>
+              )}
+              
+              {!faceDetected && (
+                <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  ⚠ No Face Detected
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* PIN Section */}
+        {cameraActive && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Step 2: Set Your PIN (Fallback)</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Create a 4-6 digit PIN as backup for clock-in
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Enter PIN
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-center tracking-widest bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+                  placeholder="••••"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Confirm PIN
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-center tracking-widest bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+                  placeholder="••••"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Enroll Button */}
+        {cameraActive && (
+          <button
+            onClick={handleEnroll}
+            disabled={enrolling || !faceDetected || pin.length < 4 || pin !== confirmPin}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            {enrolling ? 'Enrolling...' : '✓ Complete Enrollment'}
+          </button>
+        )}
+
+        {/* Instructions */}
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+          <h4 className="font-bold text-blue-900 dark:text-blue-300 mb-2">📋 Instructions:</h4>
+          <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
+            <li>• Look directly at the camera</li>
+            <li>• Ensure good lighting on your face</li>
+            <li>• Remove glasses if possible</li>
+            <li>• Keep a neutral expression</li>
+            <li>• Wait for "Face Detected" confirmation</li>
+            <li>• Set a memorable PIN for backup access</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}

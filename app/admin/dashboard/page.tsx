@@ -149,7 +149,7 @@ export default function AdminDashboard() {
         {/* Clock In Button - Prominent */}
         <div className="mb-4">
           <button 
-            onClick={() => window.location.href = '/clock-in'}
+            onClick={() => window.location.href = '/face-clock-in'}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 text-white rounded-2xl shadow-2xl p-6 hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
           >
             <div className="flex items-center justify-center space-x-4">
