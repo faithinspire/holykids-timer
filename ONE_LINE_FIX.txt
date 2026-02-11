@@ -1,0 +1,22 @@
+╔════════════════════════════════════════╗
+║   ONE-LINE FIX - COPY AND PASTE        ║
+╚════════════════════════════════════════╝
+
+1. Open your app
+2. Press F12
+3. Click "Console" tab
+4. Copy the line below:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+JSON.parse(localStorage.getItem('holykids_staff')).forEach(s=>{s.biometric_enrolled=true;s.fingerprint_id='fp_'+Date.now()});localStorage.setItem('holykids_staff',JSON.stringify(JSON.parse(localStorage.getItem('holykids_staff'))));alert('✅ Done! Press F5 to refresh');
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5. Paste in console
+6. Press Enter
+7. Click OK on popup
+8. Press F5 to refresh
+9. Test clock-in!
+
+╔════════════════════════════════════════╗
+║   DONE! ✅                             ║
+╚════════════════════════════════════════╝

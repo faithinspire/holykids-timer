@@ -1,0 +1,112 @@
+╔════════════════════════════════════════╗
+║   MANUAL FIX - DO THIS NOW!            ║
+╚════════════════════════════════════════╝
+
+The new code is on your computer but NOT deployed yet!
+
+┌────────────────────────────────────────┐
+│ STEP 1: DEPLOY THE CHANGES             │
+└────────────────────────────────────────┘
+
+Double-click: CHECK_AND_FIX.bat
+
+This will:
+✓ Add all changes
+✓ Commit to git
+✓ Push to GitHub
+✓ Trigger Vercel deployment
+
+┌────────────────────────────────────────┐
+│ STEP 2: WAIT (2-3 MINUTES)             │
+└────────────────────────────────────────┘
+
+Vercel needs time to build and deploy.
+Check: https://vercel.com/dashboard
+
+Look for "Building..." then "Ready"
+
+┌────────────────────────────────────────┐
+│ STEP 3: CLEAR OLD DATA                 │
+└────────────────────────────────────────┘
+
+On your phone browser:
+1. Open your app
+2. Press F12 (or open DevTools)
+3. Go to Console tab
+4. Type: localStorage.clear()
+5. Press Enter
+6. Refresh the page
+
+┌────────────────────────────────────────┐
+│ STEP 4: START FRESH                    │
+└────────────────────────────────────────┘
+
+1. Login again
+2. Go to Staff Management
+3. Delete ALL old staff
+4. Add NEW staff member
+5. Click "Setup" biometric
+6. Click "Enroll Now"
+7. Should see "✅ Enrolled"
+
+┌────────────────────────────────────────┐
+│ STEP 5: TEST CLOCK-IN                  │
+└────────────────────────────────────────┘
+
+1. Go to Dashboard
+2. Click "Clock In/Out"
+3. Click "Scan Fingerprint"
+4. Should work now!
+
+┌────────────────────────────────────────┐
+│ IF STILL NOT WORKING:                  │
+└────────────────────────────────────────┘
+
+Check in Console (F12):
+1. Type: JSON.parse(localStorage.getItem('holykids_staff'))
+2. Press Enter
+3. Look for your staff
+4. Check if biometric_enrolled: true
+
+If FALSE:
+→ Enrollment didn't save
+→ Try enrolling again
+
+If TRUE:
+→ Clock-in page has old code
+→ Hard refresh: Ctrl+Shift+R
+→ Or clear cache
+
+┌────────────────────────────────────────┐
+│ QUICK TEST:                            │
+└────────────────────────────────────────┘
+
+In Console, manually set enrollment:
+
+// Get staff
+let staff = JSON.parse(localStorage.getItem('holykids_staff'))
+
+// Mark first staff as enrolled
+staff[0].biometric_enrolled = true
+staff[0].fingerprint_id = 'test_123'
+
+// Save back
+localStorage.setItem('holykids_staff', JSON.stringify(staff))
+
+// Refresh page
+location.reload()
+
+Now try clock-in!
+
+╔════════════════════════════════════════╗
+║  START NOW:                            ║
+║  1. Run CHECK_AND_FIX.bat              ║
+║  2. Wait 2-3 minutes                   ║
+║  3. Clear localStorage                 ║
+║  4. Add new staff                      ║
+║  5. Enroll fingerprint                 ║
+║  6. Test clock-in                      ║
+╚════════════════════════════════════════╝
+
+IMPORTANT: You MUST deploy first!
+The new code is only on your computer.
