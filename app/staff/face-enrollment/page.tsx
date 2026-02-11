@@ -263,7 +263,7 @@ export default function FaceEnrollmentPage() {
         </div>
       </div>
 
-      <div className="px-4 py-6 max-w-2xl mx-auto">
+      <div className="px-4 py-6 max-w-2xl mx-auto pb-32 md:pb-6">
         {/* Staff Info */}
         {staff && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 mb-6">
@@ -283,11 +283,13 @@ export default function FaceEnrollmentPage() {
         )}
 
         {/* Camera Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Step 1: Capture Your Face</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white p-4 border-b border-gray-200 dark:border-gray-700">
+            Step 1: Capture Your Face
+          </h3>
           
           {!cameraActive ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-4">
               <div className="w-24 h-24 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-5xl">📸</span>
               </div>
@@ -303,30 +305,41 @@ export default function FaceEnrollmentPage() {
               </button>
             </div>
           ) : (
-            <div className="relative">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full rounded-lg"
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full"
-              />
-              
-              {faceDetected && (
-                <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  ✓ Face Detected
+            <div className="relative bg-black">
+              {/* Camera View - Mobile Optimized */}
+              <div className="relative w-full" style={{ paddingTop: '133.33%' }}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="absolute top-0 left-0 w-full h-full object-cover"
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full"
+                />
+                
+                {/* Face Detection Indicator */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  {faceDetected ? (
+                    <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg flex items-center space-x-2">
+                      <span className="text-lg">✓</span>
+                      <span>Face Detected</span>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg flex items-center space-x-2">
+                      <span className="text-lg">⚠</span>
+                      <span>Position Your Face</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              {!faceDetected && (
-                <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  ⚠ No Face Detected
+
+                {/* Guide Frame */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-64 h-80 border-4 border-white/50 rounded-3xl"></div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
@@ -373,15 +386,37 @@ export default function FaceEnrollmentPage() {
           </div>
         )}
 
-        {/* Enroll Button */}
+        {/* Action Buttons - Fixed at Bottom on Mobile */}
         {cameraActive && (
-          <button
-            onClick={handleEnroll}
-            disabled={enrolling || !faceDetected || pin.length < 4 || pin !== confirmPin}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          >
-            {enrolling ? 'Enrolling...' : '✓ Complete Enrollment'}
-          </button>
+          <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg md:relative md:border-0 md:shadow-none md:bg-transparent md:dark:bg-transparent">
+            <div className="max-w-2xl mx-auto space-y-3">
+              <button
+                onClick={handleEnroll}
+                disabled={enrolling || !faceDetected || pin.length < 4 || pin !== confirmPin}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2"
+              >
+                {enrolling ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Enrolling...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">📸</span>
+                    <span>Capture & Save</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={stopCamera}
+                disabled={enrolling}
+                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Instructions */}

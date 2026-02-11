@@ -393,56 +393,81 @@ export default function ClockInPage() {
 
           {/* Camera Active */}
           {!showSuccess && cameraActive && (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6">
-              <div className="relative mb-4">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full rounded-xl"
-                />
-                <canvas
-                  ref={canvasRef}
-                  className="absolute top-0 left-0 w-full h-full"
-                />
-                
-                {faceDetected && !scanning && (
-                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ✓ Face Detected
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+              {/* Camera View - Mobile Optimized */}
+              <div className="relative bg-black">
+                <div className="relative w-full" style={{ paddingTop: '133.33%' }}>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                  />
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 w-full h-full"
+                  />
+                  
+                  {/* Face Detection Indicator */}
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    {faceDetected && !scanning ? (
+                      <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg flex items-center space-x-2">
+                        <span className="text-lg">✓</span>
+                        <span>Face Detected</span>
+                      </div>
+                    ) : !scanning ? (
+                      <div className="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg flex items-center space-x-2">
+                        <span className="text-lg">⚠</span>
+                        <span>Position Your Face</span>
+                      </div>
+                    ) : null}
                   </div>
-                )}
-                
-                {!faceDetected && !scanning && (
-                  <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ⚠ No Face
-                  </div>
-                )}
 
-                {scanning && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                    <div className="text-center">
-                      <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-white font-medium">Recognizing...</p>
-                    </div>
+                  {/* Guide Frame */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-80 border-4 border-white/50 rounded-3xl"></div>
                   </div>
-                )}
+
+                  {/* Scanning Overlay */}
+                  {scanning && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-white font-medium">Recognizing...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <button
-                onClick={handleFaceScan}
-                disabled={scanning || !faceDetected}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-3"
-              >
-                {scanning ? 'Scanning...' : '✓ Clock In'}
-              </button>
+              {/* Action Buttons - Fixed at Bottom on Mobile */}
+              <div className="p-4 space-y-3">
+                <button
+                  onClick={handleFaceScan}
+                  disabled={scanning || !faceDetected}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2"
+                >
+                  {scanning ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Scanning...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xl">✓</span>
+                      <span>Clock In</span>
+                    </>
+                  )}
+                </button>
 
-              <button
-                onClick={stopCamera}
-                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                Cancel
-              </button>
+                <button
+                  onClick={stopCamera}
+                  className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 
