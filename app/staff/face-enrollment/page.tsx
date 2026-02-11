@@ -58,33 +58,179 @@ export default function FaceEnrollmentPage() {
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 }
+      console.log('🎥 [CAMERA] Requesting camera access...')
+      
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser')
+      }
+
+      // Request camera permission with optimized constraints for mobile
+      const constraints = {
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640, min: 320, max: 1280 },
+          height: { ideal: 480, min: 240, max: 720 },
+          aspectRatio: { ideal: 1.333 }
+        },
+        audio: false
+      }
+      
+      console.log('🎥 [CAMERA] Constraints:', JSON.stringify(constraints))
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      
+      console.log('✅ [CAMERA] Stream obtained:', {
+        active: mediaStream.active,
+        tracks: mediaStream.getVideoTracks().length
+      })
+      
+      if (mediaStream.getVideoTracks().length === 0) {
+        throw new Error('No video tracks in stream')
+      }
+
+      const videoTrack = mediaStream.getVideoTracks()[0]
+      console.log('✅ [CAMERA] Video track:', {
+        label: videoTrack.label,
+        enabled: videoTrack.enabled,
+        readyState: videoTrack.readyState,
+        settings: videoTrack.getSettings()
       })
       
       if (videoRef.current) {
+        // CRITICAL: Set srcObject BEFORE setting any handlers
         videoRef.current.srcObject = mediaStream
+        
+        // Wait for video metadata to load
+        await new Promise<void>((resolve, reject) => {
+          if (!videoRef.current) {
+            reject(new Error('Video element lost'))
+            return
+          }
+
+          const video = videoRef.current
+          
+          const onLoadedMetadata = () => {
+            console.log('✅ [CAMERA] Metadata loaded:', {
+              videoWidth: video.videoWidth,
+              videoHeight: video.videoHeight,
+              readyState: video.readyState
+            })
+            cleanup()
+            resolve()
+          }
+
+          const onError = (e: Event) => {
+            console.error('❌ [CAMERA] Video error:', e)
+            cleanup()
+            reject(new Error('Video element error'))
+          }
+
+          const cleanup = () => {
+            video.removeEventListener('loadedmetadata', onLoadedMetadata)
+            video.removeEventListener('error', onError)
+          }
+
+          video.addEventListener('loadedmetadata', onLoadedMetadata)
+          video.addEventListener('error', onError)
+
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            cleanup()
+            reject(new Error('Video load timeout'))
+          }, 10000)
+        })
+
+        // Force play (required on some mobile browsers)
+        try {
+          await videoRef.current.play()
+          console.log('✅ [CAMERA] Video playing')
+        } catch (playError) {
+          console.warn('⚠️ [CAMERA] Auto-play failed (may be normal):', playError)
+        }
+
         setStream(mediaStream)
         setCameraActive(true)
+        toast.dismiss()
         toast.success('Camera ready!')
+        console.log('✅ [CAMERA] Camera fully initialized')
       }
     } catch (error: any) {
-      console.error('Camera error:', error)
-      toast.error('Could not access camera: ' + (error.message || 'Unknown error'))
+      console.error('❌ [CAMERA] Error:', error)
+      
+      // Detailed error messages
+      let errorMessage = 'Could not access camera'
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.'
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage = 'No camera found on this device.'
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage = 'Camera is already in use by another application. Please close other apps using the camera.'
+      } else if (error.name === 'OverconstrainedError') {
+        errorMessage = 'Camera does not support the required settings. Trying with basic settings...'
+        
+        // Retry with minimal constraints
+        try {
+          const basicStream = await navigator.mediaDevices.getUserMedia({ video: true })
+          if (videoRef.current) {
+            videoRef.current.srcObject = basicStream
+            await videoRef.current.play()
+            setStream(basicStream)
+            setCameraActive(true)
+            toast.success('Camera ready with basic settings!')
+            return
+          }
+        } catch (retryError) {
+          console.error('❌ [CAMERA] Retry failed:', retryError)
+        }
+      } else if (error.name === 'TypeError') {
+        errorMessage = 'Camera API not supported in this browser. Please use Chrome, Firefox, or Safari.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast.dismiss()
+      toast.error(errorMessage, { duration: 5000 })
     }
   }
 
   const stopCamera = () => {
+    console.log('🛑 [CAMERA] Stopping camera...')
+    
     if (stream) {
-      stream.getTracks().forEach(track => track.stop())
+      stream.getTracks().forEach(track => {
+        console.log(`🛑 [CAMERA] Stopping track: ${track.label}`)
+        track.stop()
+      })
       setStream(null)
-      setCameraActive(false)
-      setCapturedImage(null)
     }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    
+    setCameraActive(false)
+    setCapturedImage(null)
+    console.log('✅ [CAMERA] Camera stopped and cleaned up')
   }
 
   const captureImage = () => {
-    if (!videoRef.current) return
+    if (!videoRef.current) {
+      toast.error('Video not ready')
+      return
+    }
+    
+    // Ensure video has dimensions
+    if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
+      toast.error('Camera not fully loaded. Please wait...')
+      return
+    }
+    
+    console.log('📸 [CAPTURE] Capturing image:', {
+      width: videoRef.current.videoWidth,
+      height: videoRef.current.videoHeight
+    })
     
     const canvas = document.createElement('canvas')
     canvas.width = videoRef.current.videoWidth
@@ -96,6 +242,10 @@ export default function FaceEnrollmentPage() {
       const imageData = canvas.toDataURL('image/jpeg', 0.8)
       setCapturedImage(imageData)
       toast.success('Image captured!')
+      console.log('✅ [CAPTURE] Image captured successfully')
+    } else {
+      toast.error('Failed to capture image')
+      console.error('❌ [CAPTURE] Could not get canvas context')
     }
   }
 
@@ -216,19 +366,35 @@ export default function FaceEnrollmentPage() {
               </button>
             </div>
           ) : (
-            <div className="relative bg-black">
+            <div className="relative bg-black" style={{ minHeight: '300px' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full"
-                style={{ display: 'block', minHeight: '300px' }}
+                className="w-full h-full object-cover"
+                style={{ 
+                  display: 'block',
+                  minHeight: '300px',
+                  maxHeight: '600px',
+                  backgroundColor: '#000',
+                  width: '100%'
+                }}
               />
               
               {capturedImage && (
                 <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-                  <img src={capturedImage} alt="Captured" className="max-w-full max-h-full" />
+                  <img src={capturedImage} alt="Captured" className="max-w-full max-h-full object-contain" />
+                </div>
+              )}
+              
+              {/* Loading indicator when camera is starting */}
+              {cameraActive && videoRef.current && videoRef.current.readyState < 2 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                  <div className="text-center text-white">
+                    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p>Loading camera...</p>
+                  </div>
                 </div>
               )}
             </div>
