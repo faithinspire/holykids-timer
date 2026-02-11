@@ -263,7 +263,7 @@ export default function FaceEnrollmentPage() {
         </div>
       </div>
 
-      <div className="px-4 py-6 max-w-2xl mx-auto pb-32 md:pb-6">
+      <div className="px-4 py-6 max-w-2xl mx-auto">
         {/* Staff Info */}
         {staff && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 mb-6">
@@ -305,15 +305,15 @@ export default function FaceEnrollmentPage() {
               </button>
             </div>
           ) : (
-            <div className="relative bg-black">
-              {/* Camera View - Mobile Optimized */}
-              <div className="relative w-full" style={{ paddingTop: '133.33%' }}>
+            <div className="relative bg-black rounded-xl overflow-hidden">
+              {/* Camera View - Simple Square Shape */}
+              <div className="relative w-full aspect-square">
                 <video
                   ref={videoRef}
                   autoPlay
                   muted
                   playsInline
-                  className="absolute top-0 left-0 w-full h-full object-cover"
+                  className="w-full h-full object-cover"
                 />
                 <canvas
                   ref={canvasRef}
@@ -335,9 +335,9 @@ export default function FaceEnrollmentPage() {
                   )}
                 </div>
 
-                {/* Guide Frame */}
+                {/* Guide Circle */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-64 h-80 border-4 border-white/50 rounded-3xl"></div>
+                  <div className="w-64 h-64 border-4 border-white/50 rounded-full"></div>
                 </div>
               </div>
             </div>
@@ -386,36 +386,34 @@ export default function FaceEnrollmentPage() {
           </div>
         )}
 
-        {/* Action Buttons - Fixed at Bottom on Mobile */}
+        {/* Action Buttons */}
         {cameraActive && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg md:relative md:border-0 md:shadow-none md:bg-transparent md:dark:bg-transparent">
-            <div className="max-w-2xl mx-auto space-y-3">
-              <button
-                onClick={handleEnroll}
-                disabled={enrolling || !faceDetected || pin.length < 4 || pin !== confirmPin}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2"
-              >
-                {enrolling ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Enrolling...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xl">📸</span>
-                    <span>Capture & Save</span>
-                  </>
-                )}
-              </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleEnroll}
+              disabled={enrolling || !faceDetected || pin.length < 4 || pin !== confirmPin}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2"
+            >
+              {enrolling ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Enrolling...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">📸</span>
+                  <span>Capture & Save</span>
+                </>
+              )}
+            </button>
 
-              <button
-                onClick={stopCamera}
-                disabled={enrolling}
-                className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              onClick={stopCamera}
+              disabled={enrolling}
+              className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-xl font-medium text-base hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
+              Cancel
+            </button>
           </div>
         )}
 

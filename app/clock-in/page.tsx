@@ -394,15 +394,15 @@ export default function ClockInPage() {
           {/* Camera Active */}
           {!showSuccess && cameraActive && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
-              {/* Camera View - Mobile Optimized */}
+              {/* Camera View - Simple Square Shape */}
               <div className="relative bg-black">
-                <div className="relative w-full" style={{ paddingTop: '133.33%' }}>
+                <div className="relative w-full aspect-square">
                   <video
                     ref={videoRef}
                     autoPlay
                     muted
                     playsInline
-                    className="absolute top-0 left-0 w-full h-full object-cover"
+                    className="w-full h-full object-cover"
                   />
                   <canvas
                     ref={canvasRef}
@@ -424,9 +424,9 @@ export default function ClockInPage() {
                     ) : null}
                   </div>
 
-                  {/* Guide Frame */}
+                  {/* Guide Circle */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-80 border-4 border-white/50 rounded-3xl"></div>
+                    <div className="w-64 h-64 border-4 border-white/50 rounded-full"></div>
                   </div>
 
                   {/* Scanning Overlay */}
@@ -441,7 +441,7 @@ export default function ClockInPage() {
                 </div>
               </div>
 
-              {/* Action Buttons - Fixed at Bottom on Mobile */}
+              {/* Action Buttons */}
               <div className="p-4 space-y-3">
                 <button
                   onClick={handleFaceScan}
