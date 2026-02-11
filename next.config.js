@@ -21,6 +21,20 @@ const nextConfig = {
           },
         ],
       },
+      // Face-api.js model files - CRITICAL for facial recognition
+      {
+        source: '/models/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
       // WebAuthn support headers
       {
         source: '/(.*)',
@@ -28,14 +42,6 @@ const nextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(self), geolocation=(self), biometric=(self)',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
           },
         ],
       },
