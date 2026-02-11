@@ -34,29 +34,25 @@ export default function ClockInPage() {
       const faceapiModule = await import('face-api.js')
       setFaceapi(faceapiModule)
       
-      // Try local models first, fallback to CDN
-      let MODEL_URL = '/models'
+      // FORCE CDN ONLY - guaranteed to work
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
       
-      try {
-        const testResponse = await fetch('/models/tiny_face_detector_model-weights_manifest.json')
-        if (!testResponse.ok) {
-          throw new Error('Local models not accessible')
-        }
-      } catch (localError) {
-        console.log('Using CDN for models...')
-        MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
-        toast('Loading AI models from CDN...', { icon: '⏳' })
-      }
+      console.log('Loading models from CDN:', MODEL_URL)
+      toast.loading('Loading AI models...')
       
-      await faceapiModule.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
-      await faceapiModule.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
-      await faceapiModule.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      await Promise.all([
+        faceapiModule.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapiModule.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapiModule.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ])
       
-      console.log('✅ Models loaded from:', MODEL_URL)
+      toast.dismiss()
+      console.log('✅ Models loaded successfully')
       await loadEnrolledStaff()
     } catch (error) {
-      console.error('Error loading face-api:', error)
-      toast.error('Failed to load facial recognition. Please refresh.')
+      console.error('❌ Error loading face-api:', error)
+      toast.dismiss()
+      toast.error('Failed to load AI models. Check internet connection.')
     }
   }
 
@@ -85,18 +81,39 @@ export default function ClockInPage() {
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 }
-      })
+      // Mobile-friendly camera constraints
+      const constraints = {
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 }
+        },
+        audio: false
+      }
+      
+      console.log('Requesting camera access...')
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
+        await videoRef.current.play()
         setStream(mediaStream)
         setCameraActive(true)
+        console.log('✅ Camera started successfully')
       }
     } catch (error) {
-      console.error('Camera error:', error)
-      toast.error('Could not access camera')
+      console.error('❌ Camera error:', error)
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          toast.error('Camera permission denied. Please allow camera access.')
+        } else if (error.name === 'NotFoundError') {
+          toast.error('No camera found on this device.')
+        } else {
+          toast.error('Could not access camera: ' + error.message)
+        }
+      } else {
+        toast.error('Could not access camera')
+      }
     }
   }
 
