@@ -1,0 +1,83 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   🚨 CRITICAL: YOU MUST RUN SQL IN SUPABASE NOW!           ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+The camera will NOW show immediately when you click "Start Camera"!
+
+BUT - For face enrollment to SAVE properly to staff records, you MUST
+run the SQL in Supabase to add the required database columns.
+
+═══════════════════════════════════════════════════════════════
+
+📋 STEPS TO RUN SQL:
+
+1. Open: https://supabase.com/dashboard
+
+2. Select your project: holykids-timer
+
+3. Click "SQL Editor" (left sidebar)
+
+4. Click "New Query"
+
+5. Copy ALL the SQL from: RUN_THIS_SQL_NOW.sql
+
+6. Paste into Supabase SQL Editor
+
+7. Click "Run" (or press Ctrl+Enter)
+
+8. Wait for "Success. No rows returned"
+
+═══════════════════════════════════════════════════════════════
+
+📊 WHAT THE SQL DOES:
+
+Adds these columns to staff table:
+- face_embedding (TEXT) - stores 128D face vector
+- face_enrolled (BOOLEAN) - tracks if face is enrolled
+- face_enrolled_at (TIMESTAMP) - when enrolled
+- pin_hash (TEXT) - SHA-256 hashed PIN
+
+Adds these columns to attendance table:
+- clock_method (TEXT) - 'face' or 'pin'
+- device_id (TEXT) - device fingerprint
+- clock_type (TEXT) - 'check_in' or 'check_out'
+
+Creates failed_clock_attempts table for security logging
+
+═══════════════════════════════════════════════════════════════
+
+✅ AFTER RUNNING SQL:
+
+1. Camera will show immediately
+2. Face enrollment will SAVE to Supabase
+3. Face clock-in will work
+4. PIN fallback will work
+5. All data syncs properly with staff records
+
+═══════════════════════════════════════════════════════════════
+
+🎯 CURRENT STATUS:
+
+✅ Camera fixed - shows IMMEDIATELY
+✅ Face recognition loads from CDN
+✅ Mobile UI optimized
+✅ Square camera view
+✅ API syncs with staff records
+⚠️ DATABASE NEEDS SQL RUN
+
+═══════════════════════════════════════════════════════════════
+
+🔥 DO THIS NOW:
+
+1. Open RUN_THIS_SQL_NOW.sql
+2. Copy all SQL
+3. Run in Supabase SQL Editor
+4. Test face enrollment
+5. Done!
+
+═══════════════════════════════════════════════════════════════
+
+The camera is FIXED and will show immediately!
+Just run that SQL and everything will work perfectly!
