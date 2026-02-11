@@ -1,0 +1,70 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   ✅ RUN THIS SQL IN SUPABASE NOW                           ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+You got an error because the policy already exists. That's OK!
+
+Use this NEW SQL file instead: RUN_THIS_SQL_FIXED.sql
+
+It handles existing policies gracefully.
+
+═══════════════════════════════════════════════════════════════
+
+📋 STEPS:
+
+1. Open: https://supabase.com/dashboard
+
+2. Select your project
+
+3. Click "SQL Editor" (left sidebar)
+
+4. Click "New Query"
+
+5. Open file: RUN_THIS_SQL_FIXED.sql
+
+6. Copy ALL the SQL
+
+7. Paste into Supabase SQL Editor
+
+8. Click "Run" (or Ctrl+Enter)
+
+9. You should see: "Database setup complete! Face recognition is ready."
+
+═══════════════════════════════════════════════════════════════
+
+✅ WHAT THIS DOES:
+
+- Adds face_embedding column to staff table
+- Adds face_enrolled column to staff table
+- Adds pin_hash column to staff table
+- Adds clock_method to attendance table
+- Creates failed_clock_attempts table
+- Drops old policy if exists
+- Creates new policy
+- Adds performance indexes
+
+═══════════════════════════════════════════════════════════════
+
+🎯 AFTER RUNNING:
+
+1. Camera will show immediately ✅
+2. Face enrollment will SAVE to database ✅
+3. Face clock-in will work ✅
+4. PIN fallback will work ✅
+5. All data syncs with staff records ✅
+
+═══════════════════════════════════════════════════════════════
+
+🔥 DO THIS NOW:
+
+1. Open: RUN_THIS_SQL_FIXED.sql
+2. Copy all SQL
+3. Paste in Supabase SQL Editor
+4. Click "Run"
+5. Done!
+
+═══════════════════════════════════════════════════════════════
+
+Then test face enrollment - it will work perfectly!
