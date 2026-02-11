@@ -55,13 +55,27 @@ export default function FaceEnrollmentPage() {
 
       setStaff(staffMember)
 
-      // Load face-api models
+      // Load face-api models with CDN fallback
       toast.loading('Loading face recognition models...')
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+      
+      let MODEL_URL = '/models'
+      
+      try {
+        const testResponse = await fetch('/models/tiny_face_detector_model-weights_manifest.json')
+        if (!testResponse.ok) {
+          throw new Error('Local models not accessible')
+        }
+      } catch (localError) {
+        console.log('Using CDN for models...')
+        MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+      }
+      
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      
       toast.dismiss()
-      toast.success('Models loaded!')
+      toast.success('Models loaded from ' + (MODEL_URL.includes('cdn') ? 'CDN' : 'local'))
       setModelsLoaded(true)
     } catch (error) {
       console.error('Error loading:', error)

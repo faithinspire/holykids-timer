@@ -12,7 +12,20 @@ export async function loadFaceModels() {
   if (modelsLoaded) return true
 
   try {
-    const MODEL_URL = '/models' // Models will be in public/models folder
+    // Try local models first, fallback to CDN
+    let MODEL_URL = '/models'
+    
+    try {
+      // Test if local models are accessible
+      const testResponse = await fetch('/models/tiny_face_detector_model-weights_manifest.json')
+      if (!testResponse.ok) {
+        throw new Error('Local models not accessible')
+      }
+    } catch (localError) {
+      console.log('Local models not found, using CDN...')
+      // Use jsdelivr CDN as fallback
+      MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+    }
     
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -22,7 +35,7 @@ export async function loadFaceModels() {
     ])
     
     modelsLoaded = true
-    console.log('✅ Face recognition models loaded')
+    console.log('✅ Face recognition models loaded from:', MODEL_URL)
     return true
   } catch (error) {
     console.error('❌ Error loading face models:', error)

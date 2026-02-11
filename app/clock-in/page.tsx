@@ -34,14 +34,29 @@ export default function ClockInPage() {
       const faceapiModule = await import('face-api.js')
       setFaceapi(faceapiModule)
       
-      await faceapiModule.nets.tinyFaceDetector.loadFromUri('/models')
-      await faceapiModule.nets.faceLandmark68Net.loadFromUri('/models')
-      await faceapiModule.nets.faceRecognitionNet.loadFromUri('/models')
+      // Try local models first, fallback to CDN
+      let MODEL_URL = '/models'
       
+      try {
+        const testResponse = await fetch('/models/tiny_face_detector_model-weights_manifest.json')
+        if (!testResponse.ok) {
+          throw new Error('Local models not accessible')
+        }
+      } catch (localError) {
+        console.log('Using CDN for models...')
+        MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+        toast('Loading AI models from CDN...', { icon: '⏳' })
+      }
+      
+      await faceapiModule.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+      await faceapiModule.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+      await faceapiModule.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      
+      console.log('✅ Models loaded from:', MODEL_URL)
       await loadEnrolledStaff()
     } catch (error) {
       console.error('Error loading face-api:', error)
-      toast.error('Failed to load facial recognition')
+      toast.error('Failed to load facial recognition. Please refresh.')
     }
   }
 
