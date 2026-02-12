@@ -1,0 +1,76 @@
+================================================================================
+✅ FASTEST FIX - DO THIS IN VERCEL DASHBOARD NOW
+================================================================================
+
+Since Vercel is not auto-deploying from GitHub, manually trigger deployment:
+
+================================================================================
+STEP-BY-STEP:
+================================================================================
+
+1. Go to: https://vercel.com
+
+2. Log in to your account
+
+3. Click on your project name (holykids-timer or similar)
+
+4. You'll see the "Deployments" page
+
+5. Look at the top deployment - click the three dots (...) on the right
+
+6. Click "Redeploy"
+
+7. IMPORTANT: Uncheck "Use existing Build Cache"
+
+8. Click "Redeploy" button
+
+9. Wait 2-5 minutes for deployment to complete
+
+10. When it shows "Ready", test your app!
+
+================================================================================
+WHAT THIS DOES:
+================================================================================
+
+This forces Vercel to:
+✅ Pull the latest code from GitHub
+✅ Rebuild everything from scratch
+✅ Deploy the new version with CDN models
+
+================================================================================
+AFTER DEPLOYMENT:
+================================================================================
+
+1. Go to your app URL
+2. Press Ctrl+Shift+Delete (clear browser cache)
+3. Go to /face-clock-in page
+4. Click "Start Camera"
+5. Models will load from CDN
+6. Face recognition will work!
+
+================================================================================
+IF YOU DON'T SEE "REDEPLOY" BUTTON:
+================================================================================
+
+Alternative method:
+
+1. In Vercel dashboard, go to your project
+2. Click "Settings" at the top
+3. Click "Git" in the left sidebar
+4. Click "Disconnect" (if connected)
+5. Click "Connect Git Repository"
+6. Select your GitHub repo
+7. Click "Deploy"
+
+This will reconnect and deploy fresh.
+
+================================================================================
+BOTTOM LINE:
+================================================================================
+
+Vercel's auto-deploy from GitHub is not working.
+You need to manually trigger deployment from Vercel dashboard.
+
+Just click "Redeploy" and uncheck "Use existing Build Cache".
+
+================================================================================
