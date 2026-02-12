@@ -1,0 +1,85 @@
+================================================================================
+🚨 BUILD ERROR DETECTED - CORRUPTED NODE_MODULES
+================================================================================
+
+ERROR: SyntaxError in node_modules/next/dist/compiled/glob/glob.js
+CAUSE: Corrupted node_modules folder (file got damaged)
+
+================================================================================
+✅ SOLUTION (Choose ONE):
+================================================================================
+
+OPTION 1 - AUTOMATIC (RECOMMENDED):
+------------------------------------
+Double-click: FIX_BUILD_ERROR.bat
+
+This will:
+1. Delete node_modules folder
+2. Delete package-lock.json
+3. Reinstall all dependencies (takes 3-5 minutes)
+4. Test the build
+
+OPTION 2 - MANUAL:
+------------------
+Open Command Prompt and run these commands:
+
+cd "C:\Users\OLU\Desktop\my files\TIME ATTENDANCE"
+rmdir /s /q node_modules
+del package-lock.json
+npm install
+npm run build
+
+================================================================================
+⚠️ IMPORTANT NOTES:
+================================================================================
+
+1. This is NOT a code error - your code is correct
+2. The node_modules folder got corrupted (happens sometimes)
+3. A fresh install will fix it
+4. This will take 3-5 minutes to download and install packages
+5. After fixing, you need to commit and push again
+
+================================================================================
+🔍 WHAT HAPPENED:
+================================================================================
+
+The build failed because a file in node_modules got corrupted:
+- File: node_modules/next/dist/compiled/glob/glob.js
+- Error: "SyntaxError: missing ) after argument list"
+- This file is part of Next.js dependencies
+
+This can happen due to:
+- Interrupted npm install
+- Disk write error
+- Antivirus interference
+- Power loss during install
+
+================================================================================
+✅ AFTER FIXING:
+================================================================================
+
+Once FIX_BUILD_ERROR.bat completes successfully:
+
+1. Commit the changes:
+   git add -A
+   git commit -m "Fix build error - clean install"
+   git push origin main
+
+2. Vercel will automatically deploy
+
+3. Test your site:
+   - Face enrollment: /staff/face-enrollment
+   - Face clock-in: /face-clock-in
+   - PIN clock-in: /pin-clock-in
+
+================================================================================
+🎯 BOTTOM LINE:
+================================================================================
+
+Your code is fine! Just need to reinstall node_modules.
+
+Run: FIX_BUILD_ERROR.bat
+
+Wait 3-5 minutes, then commit and push.
+
+================================================================================
