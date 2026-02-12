@@ -15,12 +15,6 @@ async function detectFaceAndExtractEmbedding(imageBase64: string): Promise<{
     console.log('🔍 [SERVER] Detecting face in image...')
     
     // TODO: Integrate with face recognition service
-    // Options:
-    // 1. AWS Rekognition
-    // 2. Azure Face API  
-    // 3. Google Cloud Vision
-    // 4. Python microservice with DeepFace
-    
     // For now, generate mock embedding (128 dimensions)
     const mockEmbedding = Array.from({ length: 128 }, () => Math.random())
     
