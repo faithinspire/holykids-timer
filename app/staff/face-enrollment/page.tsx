@@ -38,9 +38,9 @@ export default function FaceEnrollmentPage() {
   const [confirmPin, setConfirmPin] = useState('')
   const [enrolling, setEnrolling] = useState(false)
 
-  // Load models and staff data on mount
+  // Load staff data on mount (NOT models - models load on user action)
   useEffect(() => {
-    loadModelsAndStaff()
+    loadStaffData()
     
     // Cleanup on unmount
     return () => {
@@ -48,7 +48,7 @@ export default function FaceEnrollmentPage() {
     }
   }, [])
 
-  const loadModelsAndStaff = async () => {
+  const loadStaffData = async () => {
     try {
       // Load staff data
       const staffId = localStorage.getItem('face_enrollment_staff_id')
@@ -69,28 +69,84 @@ export default function FaceEnrollmentPage() {
       }
 
       setStaff(staffMember)
-
-      // Load face-api models in background
-      console.log('📦 Loading face detection models...')
-      toast.loading('Loading face detection models...')
-      
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-      ])
-      
-      setModelsLoaded(true)
-      toast.dismiss()
-      toast.success('Face detection ready!')
-      console.log('✅ Models loaded successfully')
+      console.log('✅ Staff data loaded')
       
     } catch (error) {
-      console.error('❌ Error loading:', error)
-      toast.dismiss()
-      toast.error('Failed to load face detection')
+      console.error('❌ Error loading staff:', error)
+      toast.error('Failed to load staff data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 🔥 CRITICAL: Load models ONLY when user clicks Start Camera
+  const loadFaceDetectionModels = async (retryCount = 0): Promise<boolean> => {
+    const MAX_RETRIES = 3
+    
+    try {
+      console.log(`📦 [MODELS] Loading face detection models (attempt ${retryCount + 1}/${MAX_RETRIES})...`)
+      toast.loading('Loading face detection models...')
+
+      // CRITICAL: Use absolute path from public folder
+      const MODEL_URL = '/models'
+      
+      // Test if models are accessible
+      console.log('🔍 [MODELS] Testing model file accessibility...')
+      const testResponse = await fetch(`${MODEL_URL}/tiny_face_detector_model-weights_manifest.json`)
+      
+      if (!testResponse.ok) {
+        throw new Error(`Model files not accessible: ${testResponse.status} ${testResponse.statusText}`)
+      }
+      
+      console.log('✅ [MODELS] Model files are accessible')
+
+      // Load each model individually with detailed logging
+      console.log('📥 [MODELS] Loading TinyFaceDetector...')
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] TinyFaceDetector loaded')
+
+      console.log('📥 [MODELS] Loading FaceLandmark68Net...')
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] FaceLandmark68Net loaded')
+
+      console.log('📥 [MODELS] Loading FaceRecognitionNet...')
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] FaceRecognitionNet loaded')
+
+      setModelsLoaded(true)
+      toast.dismiss()
+      toast.success('✅ Face detection models loaded successfully!')
+      console.log('✅ [MODELS] All models loaded successfully')
+      
+      return true
+      
+    } catch (error: any) {
+      console.error(`❌ [MODELS] Error loading models (attempt ${retryCount + 1}):`, error)
+      console.error('❌ [MODELS] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+      
+      toast.dismiss()
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`🔄 [MODELS] Retrying in 2 seconds...`)
+        toast.loading(`Retrying model load (${retryCount + 2}/${MAX_RETRIES})...`)
+        
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        return loadFaceDetectionModels(retryCount + 1)
+      } else {
+        // All retries failed
+        console.error('❌ [MODELS] All retry attempts failed')
+        toast.error(`Failed to load face detection models after ${MAX_RETRIES} attempts. Please use PIN clock-in instead.`)
+        
+        setModelsLoaded(false)
+        setCameraError(`Model loading failed: ${error.message}. Please use PIN clock-in.`)
+        
+        return false
+      }
     }
   }
 
@@ -101,6 +157,18 @@ export default function FaceEnrollmentPage() {
     console.log('🎥 [START] User clicked Start Camera')
 
     try {
+      // 🔥 CRITICAL: Load models FIRST (user-initiated)
+      if (!modelsLoaded) {
+        console.log('📦 [START] Models not loaded yet, loading now...')
+        const modelsSuccess = await loadFaceDetectionModels()
+        
+        if (!modelsSuccess) {
+          throw new Error('Failed to load face detection models. Please use PIN clock-in instead.')
+        }
+      } else {
+        console.log('✅ [START] Models already loaded')
+      }
+
       // Check browser support
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera API not supported in this browser. Please use Chrome, Firefox, or Safari.')
@@ -187,7 +255,7 @@ export default function FaceEnrollmentPage() {
       toast.success('Camera active! Position your face in the frame.')
       console.log('✅ [CAMERA] Fully initialized and displaying')
 
-      // Start face detection loop
+      // Start face detection loop (only after models loaded and camera active)
       startFaceDetection()
 
     } catch (error: any) {
@@ -500,11 +568,9 @@ export default function FaceEnrollmentPage() {
                 <p className="text-gray-600 dark:text-gray-400 text-center mb-6 max-w-md">
                   Click the button below to start your camera and capture your face for attendance recognition.
                 </p>
-                {!modelsLoaded && (
-                  <p className="text-yellow-600 dark:text-yellow-400 text-sm mb-4">
-                    ⏳ Loading face detection models...
-                  </p>
-                )}
+                <p className="text-sm text-gray-500 dark:text-gray-500 text-center">
+                  Face detection models will load when you click "Start Camera"
+                </p>
               </div>
             )}
 
@@ -600,10 +666,9 @@ export default function FaceEnrollmentPage() {
             {cameraState === 'idle' && (
               <button
                 onClick={startCamera}
-                disabled={!modelsLoaded}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 shadow-lg transition-all"
               >
-                {modelsLoaded ? '📸 Start Camera' : '⏳ Loading Models...'}
+                📸 Start Camera
               </button>
             )}
 
