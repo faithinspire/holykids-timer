@@ -3,15 +3,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm ci || npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
-  "routes": [
-    {
-      "src": "/models/(.*)",
-      "dest": "/models/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Access-Control-Allow-Origin": "*"
-      }
-    }
-  ]
+  "outputDirectory": ".next"
 }
