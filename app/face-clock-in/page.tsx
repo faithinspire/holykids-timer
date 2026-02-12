@@ -36,7 +36,7 @@ export default function FaceClockInPage() {
   const [clockType, setClockType] = useState<'check_in' | 'check_out'>('check_in')
 
   useEffect(() => {
-    loadModelsAndFaces()
+    loadEnrolledFaces()
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop())
@@ -44,31 +44,93 @@ export default function FaceClockInPage() {
     }
   }, [])
 
-  const loadModelsAndFaces = async () => {
+  const loadEnrolledFaces = async () => {
     try {
-      // Load face-api models
-      toast.loading('Loading face recognition...')
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-      toast.dismiss()
-      setModelsLoaded(true)
-
-      // Load enrolled faces
+      // Load enrolled faces from database
       const response = await fetch('/api/face/enroll')
       const data = await response.json()
       
       if (data.enrolled_faces && data.enrolled_faces.length > 0) {
         setEnrolledFaces(data.enrolled_faces)
-        toast.success(`${data.enrolled_faces.length} staff enrolled`)
+        console.log(`✅ Loaded ${data.enrolled_faces.length} enrolled staff`)
       } else {
-        toast('No staff enrolled yet', { icon: '⚠️' })
+        console.log('⚠️ No staff enrolled yet')
       }
     } catch (error) {
-      console.error('Error loading:', error)
-      toast.error('Failed to load face recognition')
+      console.error('❌ Error loading enrolled faces:', error)
+      toast.error('Failed to load enrolled staff')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 🔥 CRITICAL: Load models ONLY when user clicks Start Camera
+  const loadFaceDetectionModels = async (retryCount = 0): Promise<boolean> => {
+    const MAX_RETRIES = 3
+    
+    try {
+      console.log(`📦 [MODELS] Loading face detection models (attempt ${retryCount + 1}/${MAX_RETRIES})...`)
+      toast.loading('Loading face recognition...')
+
+      // CRITICAL: Use absolute path from public folder
+      const MODEL_URL = '/models'
+      
+      // Test if models are accessible
+      console.log('🔍 [MODELS] Testing model file accessibility...')
+      const testResponse = await fetch(`${MODEL_URL}/tiny_face_detector_model-weights_manifest.json`)
+      
+      if (!testResponse.ok) {
+        throw new Error(`Model files not accessible: ${testResponse.status} ${testResponse.statusText}`)
+      }
+      
+      console.log('✅ [MODELS] Model files are accessible')
+
+      // Load each model individually with detailed logging
+      console.log('📥 [MODELS] Loading TinyFaceDetector...')
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] TinyFaceDetector loaded')
+
+      console.log('📥 [MODELS] Loading FaceLandmark68Net...')
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] FaceLandmark68Net loaded')
+
+      console.log('📥 [MODELS] Loading FaceRecognitionNet...')
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      console.log('✅ [MODELS] FaceRecognitionNet loaded')
+
+      setModelsLoaded(true)
+      toast.dismiss()
+      toast.success('✅ Face recognition ready!')
+      console.log('✅ [MODELS] All models loaded successfully')
+      
+      return true
+      
+    } catch (error: any) {
+      console.error(`❌ [MODELS] Error loading models (attempt ${retryCount + 1}):`, error)
+      console.error('❌ [MODELS] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+      
+      toast.dismiss()
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`🔄 [MODELS] Retrying in 2 seconds...`)
+        toast.loading(`Retrying model load (${retryCount + 2}/${MAX_RETRIES})...`)
+        
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        return loadFaceDetectionModels(retryCount + 1)
+      } else {
+        // All retries failed
+        console.error('❌ [MODELS] All retry attempts failed')
+        toast.error(`Failed to load face recognition after ${MAX_RETRIES} attempts. Please use PIN clock-in instead.`)
+        
+        setModelsLoaded(false)
+        
+        return false
+      }
     }
   }
 
