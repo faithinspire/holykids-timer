@@ -136,6 +136,16 @@ export default function FaceClockInPage() {
 
   const startCamera = async () => {
     try {
+      // 🔥 CRITICAL: Load models FIRST before starting camera
+      if (!modelsLoaded) {
+        console.log('📦 [MODELS] Models not loaded yet, loading now...')
+        const loaded = await loadFaceDetectionModels()
+        if (!loaded) {
+          toast.error('Failed to load face recognition. Please try again or use PIN.')
+          return
+        }
+      }
+      
       console.log('🎥 [CAMERA] Requesting camera access...')
       
       // Check if getUserMedia is supported
@@ -598,10 +608,9 @@ export default function FaceClockInPage() {
                   </p>
                   <button
                     onClick={startCamera}
-                    disabled={!modelsLoaded}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 shadow-lg"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 shadow-lg"
                   >
-                    {modelsLoaded ? '📸 Start Camera' : 'Loading...'}
+                    📸 Start Camera
                   </button>
                 </div>
               ) : (
