@@ -72,8 +72,8 @@ export default function FaceClockInPage() {
       console.log(`📦 [MODELS] Loading face detection models (attempt ${retryCount + 1}/${MAX_RETRIES})...`)
       toast.loading('Loading face recognition...')
 
-      // CRITICAL: Use absolute path from public folder
-      const MODEL_URL = '/models'
+      // CRITICAL: Use CDN for reliable model loading (bypasses Git LFS issues)
+      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
       
       // Test if models are accessible
       console.log('🔍 [MODELS] Testing model file accessibility...')

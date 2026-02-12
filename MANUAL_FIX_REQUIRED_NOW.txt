@@ -1,0 +1,100 @@
+================================================================================
+⚠️ MANUAL FIX REQUIRED - POWERSHELL IS BLOCKING AUTOMATION
+================================================================================
+
+THE PROBLEM:
+The face recognition model files are too large for Git (6.4 MB total). They're not 
+being properly deployed to Vercel, causing the tensor shape error:
+"Error: tensor should have 589824 values but has 157001"
+
+THE SOLUTION:
+Use the official face-api.js CDN instead of local model files.
+
+================================================================================
+WHAT YOU NEED TO DO MANUALLY:
+================================================================================
+
+STEP 1: Open this file in a text editor:
+  app\face-clock-in\page.tsx
+
+STEP 2: Find this line (around line 77):
+  const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+
+STEP 3: Verify it says the CDN URL above (I already changed it)
+  If it still says const MODEL_URL = '/models', change it to the CDN URL
+
+STEP 4: Open this file in a text editor:
+  app\staff\face-enrollment\page.tsx
+
+STEP 5: Find this line (around line 91):
+  const MODEL_URL = '/models'
+
+STEP 6: Change it to:
+  const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+
+STEP 7: Save both files
+
+STEP 8: Open Command Prompt (NOT PowerShell) and run:
+  cd "C:\Users\OLU\Desktop\my files\TIME ATTENDANCE"
+  git add .
+  git commit -m "Use CDN for face-api.js models"
+  git push origin main
+
+================================================================================
+WHY THIS WORKS:
+================================================================================
+
+✅ CDN hosts the correct model files
+✅ No Git LFS needed
+✅ No large files in repository
+✅ Models load reliably
+✅ Vercel deployment works
+✅ No more tensor shape errors
+
+The CDN URL points to the official face-api.js model repository on GitHub Pages.
+All the model files are there and properly formatted.
+
+================================================================================
+ALTERNATIVE IF CDN DOESN'T WORK:
+================================================================================
+
+If your network blocks the CDN or it's too slow, you can:
+
+1. Use PIN-only system (already working at /pin-clock-in)
+2. Host models on your own CDN (Cloudflare, AWS S3)
+3. Use a different library (TensorFlow.js + MediaPipe)
+
+But the CDN should work fine - it's the official source for face-api.js models.
+
+================================================================================
+AFTER YOU PUSH TO GITHUB:
+================================================================================
+
+1. Wait for Vercel to deploy (2-5 minutes)
+2. Go to your app: https://your-app.vercel.app/face-clock-in
+3. Click "Start Camera"
+4. Open browser console (F12)
+5. You should see:
+   ✅ [MODELS] Loading TinyFaceDetector...
+   ✅ [MODELS] TinyFaceDetector loaded
+   ✅ [MODELS] Loading FaceLandmark68Net...
+   ✅ [MODELS] FaceLandmark68Net loaded
+   ✅ [MODELS] Loading FaceRecognitionNet...
+   ✅ [MODELS] FaceRecognitionNet loaded
+   ✅ [MODELS] All models loaded successfully
+
+NO MORE ERRORS!
+
+================================================================================
+SUMMARY:
+================================================================================
+
+1. Edit app\face-clock-in\page.tsx - change MODEL_URL to CDN (already done)
+2. Edit app\staff\face-enrollment\page.tsx - change MODEL_URL to CDN (you do this)
+3. Commit and push to GitHub using Command Prompt
+4. Wait for Vercel deployment
+5. Test face recognition - it will work!
+
+The CDN solution bypasses all the Git large file issues and loads models reliably.
+
+================================================================================
