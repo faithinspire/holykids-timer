@@ -1,0 +1,168 @@
+================================================================================
+🚀 DEPLOY TO RENDER - STEP BY STEP GUIDE
+================================================================================
+
+Render is simpler and more reliable than Vercel for Next.js apps.
+
+================================================================================
+STEP 1: CREATE RENDER ACCOUNT
+================================================================================
+
+1. Go to: https://render.com
+2. Click "Get Started" or "Sign Up"
+3. Sign up with GitHub (recommended) or email
+4. Verify your email if needed
+
+================================================================================
+STEP 2: CONNECT GITHUB REPOSITORY
+================================================================================
+
+1. Once logged in, click "New +" button (top right)
+2. Select "Web Service"
+3. Click "Connect GitHub" (if not already connected)
+4. Authorize Render to access your GitHub
+5. Find your repository: "holykids-timer" or "time-attendance"
+6. Click "Connect"
+
+================================================================================
+STEP 3: CONFIGURE WEB SERVICE
+================================================================================
+
+Fill in these settings:
+
+Name: holykids-attendance
+Region: Oregon (US West) - or closest to you
+Branch: main
+Root Directory: (leave blank)
+Runtime: Node
+Build Command: npm install && npm run build
+Start Command: npm start
+Plan: Free
+
+================================================================================
+STEP 4: ADD ENVIRONMENT VARIABLES
+================================================================================
+
+Scroll down to "Environment Variables" section.
+
+Click "Add Environment Variable" and add these THREE variables:
+
+1. NEXT_PUBLIC_SUPABASE_URL
+   Value: (your Supabase project URL)
+   Example: https://xxxxxxxxxxxxx.supabase.co
+
+2. NEXT_PUBLIC_SUPABASE_ANON_KEY
+   Value: (your Supabase anon/public key)
+   Example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+3. SUPABASE_SERVICE_ROLE_KEY
+   Value: (your Supabase service role key)
+   Example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+WHERE TO FIND THESE:
+1. Go to https://supabase.com
+2. Open your project
+3. Click "Settings" (gear icon)
+4. Click "API" in left sidebar
+5. Copy the values:
+   - Project URL → NEXT_PUBLIC_SUPABASE_URL
+   - anon public → NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - service_role → SUPABASE_SERVICE_ROLE_KEY
+
+================================================================================
+STEP 5: DEPLOY
+================================================================================
+
+1. Click "Create Web Service" button at the bottom
+2. Render will start building your app
+3. Wait 3-5 minutes for first build
+4. Watch the build logs for any errors
+
+================================================================================
+STEP 6: GET YOUR URL
+================================================================================
+
+Once deployed, Render will give you a URL like:
+https://holykids-attendance.onrender.com
+
+This is your live site!
+
+================================================================================
+STEP 7: TEST YOUR SITE
+================================================================================
+
+1. Go to your Render URL
+2. Test these pages:
+   - /face-clock-in - Should show camera interface
+   - /pin-clock-in - Should allow PIN entry
+   - /admin/dashboard - Admin panel
+   - /admin/staff - Staff management
+
+================================================================================
+✅ ADVANTAGES OF RENDER:
+================================================================================
+
+✅ Simpler configuration than Vercel
+✅ More reliable auto-deploy from GitHub
+✅ Better build logs and error messages
+✅ Free tier includes:
+   - 750 hours/month (enough for 24/7)
+   - Automatic HTTPS
+   - Auto-deploy from GitHub
+   - Custom domains
+
+================================================================================
+🔧 TROUBLESHOOTING:
+================================================================================
+
+If build fails:
+
+1. Check build logs in Render dashboard
+2. Look for error messages
+3. Common issues:
+   - Missing environment variables
+   - Node version mismatch
+   - npm install errors
+
+If build succeeds but site doesn't work:
+
+1. Check runtime logs in Render dashboard
+2. Look for errors when accessing pages
+3. Verify environment variables are set correctly
+4. Check Supabase connection
+
+================================================================================
+📝 AUTOMATIC DEPLOYMENTS:
+================================================================================
+
+After initial setup, Render will automatically deploy when you:
+1. Push to GitHub main branch
+2. No manual redeploy needed!
+3. Check "Events" tab in Render dashboard to see deployments
+
+================================================================================
+🎯 CURRENT STATUS:
+================================================================================
+
+✅ render.yaml created (Render configuration)
+✅ Code ready on GitHub (commit: 7ef8189)
+✅ Server-side face recognition implemented
+✅ PIN clock-in working
+✅ All ML libraries removed
+
+Just follow the steps above to deploy!
+
+================================================================================
+💡 QUICK START:
+================================================================================
+
+1. Go to https://render.com
+2. Sign up with GitHub
+3. Click "New +" → "Web Service"
+4. Connect your GitHub repo
+5. Add 3 environment variables (Supabase keys)
+6. Click "Create Web Service"
+7. Wait 3-5 minutes
+8. Done!
+
+================================================================================
