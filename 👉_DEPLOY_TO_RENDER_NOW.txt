@@ -1,0 +1,111 @@
+================================================================================
+🚀 DEPLOY TO RENDER - QUICK START
+================================================================================
+
+Vercel is having issues. Let's use Render instead - it's simpler and works better!
+
+================================================================================
+✅ STEP-BY-STEP (Takes 5 minutes):
+================================================================================
+
+1. GO TO RENDER
+   https://render.com
+   Click "Get Started" or "Sign Up"
+   Sign up with GitHub (easiest)
+
+2. CREATE WEB SERVICE
+   Click "New +" button (top right)
+   Select "Web Service"
+   Connect your GitHub repository: "holykids-timer"
+   Click "Connect"
+
+3. CONFIGURE SERVICE
+   Name: holykids-attendance
+   Region: Oregon (or closest to you)
+   Branch: main
+   Build Command: npm install && npm run build
+   Start Command: npm start
+   Plan: Free
+
+4. ADD ENVIRONMENT VARIABLES (IMPORTANT!)
+   Click "Add Environment Variable" and add these 3:
+
+   Variable 1:
+   Key: NEXT_PUBLIC_SUPABASE_URL
+   Value: (your Supabase URL - see below)
+
+   Variable 2:
+   Key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+   Value: (your Supabase anon key - see below)
+
+   Variable 3:
+   Key: SUPABASE_SERVICE_ROLE_KEY
+   Value: (your Supabase service role key - see below)
+
+5. GET SUPABASE KEYS
+   Go to: https://supabase.com
+   Open your project
+   Click "Settings" → "API"
+   Copy these values:
+   - Project URL → use for NEXT_PUBLIC_SUPABASE_URL
+   - anon public → use for NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - service_role → use for SUPABASE_SERVICE_ROLE_KEY
+
+6. DEPLOY
+   Click "Create Web Service"
+   Wait 3-5 minutes
+   Done!
+
+================================================================================
+🎯 YOUR SITE WILL BE AT:
+================================================================================
+
+https://holykids-attendance.onrender.com
+
+(or whatever name you chose)
+
+================================================================================
+✅ WHAT'S INCLUDED:
+================================================================================
+
+✅ Server-side face recognition (no browser ML issues!)
+✅ PIN clock-in fallback
+✅ Staff management
+✅ Reports with CSV/PDF export
+✅ Admin dashboard
+✅ Automatic HTTPS
+✅ Auto-deploy from GitHub
+
+================================================================================
+🔄 AUTOMATIC UPDATES:
+================================================================================
+
+After initial setup, Render automatically deploys when you push to GitHub!
+No manual redeploy needed.
+
+================================================================================
+📝 FULL GUIDE:
+================================================================================
+
+See: RENDER_DEPLOYMENT_GUIDE.txt for detailed instructions
+
+================================================================================
+💡 WHY RENDER?
+================================================================================
+
+✅ Simpler than Vercel
+✅ More reliable auto-deploy
+✅ Better error messages
+✅ Free tier is generous
+✅ No configuration issues
+
+================================================================================
+🎉 READY TO GO!
+================================================================================
+
+Just follow the 6 steps above and you'll be live in 5 minutes!
+
+Your code is already on GitHub (commit: f76f78a)
+Everything is ready to deploy!
+
+================================================================================
