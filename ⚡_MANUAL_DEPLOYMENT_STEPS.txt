@@ -1,0 +1,178 @@
+================================================================================
+⚡ YOUR CODE IS ON GITHUB - NOW DEPLOY MANUALLY
+================================================================================
+
+The "+163-0 lines" you see on GitHub is NORMAL - it just means we added a
+documentation file. This is NOT an error!
+
+Vercel and Render DON'T automatically deploy. You must connect them first.
+
+================================================================================
+🚀 OPTION 1: DEPLOY TO VERCEL (RECOMMENDED)
+================================================================================
+
+STEP 1: Go to Vercel
+   Open: https://vercel.com
+
+STEP 2: Sign In/Sign Up
+   - Click "Sign Up" if you don't have an account
+   - Choose "Continue with GitHub"
+   - Authorize Vercel to access your GitHub
+
+STEP 3: Import Project
+   - Click "Add New..." button (top right)
+   - Select "Project"
+   - You'll see your GitHub repositories
+   - Find "holykids-timer"
+   - Click "Import"
+
+STEP 4: Configure Project
+   - Project Name: holykids-timer (or change it)
+   - Framework Preset: Next.js (should auto-detect)
+   - Root Directory: ./ (leave as is)
+   - Build Command: npm run build (leave as is)
+   - Output Directory: .next (leave as is)
+
+STEP 5: Add Environment Variables
+   Click "Environment Variables" section
+   Add these 3 variables:
+
+   Variable 1:
+   Name: NEXT_PUBLIC_SUPABASE_URL
+   Value: [paste your Supabase URL]
+
+   Variable 2:
+   Name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+   Value: [paste your Supabase anon key]
+
+   Variable 3:
+   Name: SUPABASE_SERVICE_ROLE_KEY
+   Value: [paste your Supabase service role key]
+
+   WHERE TO GET THESE:
+   1. Go to https://supabase.com
+   2. Open your project
+   3. Click Settings → API
+   4. Copy the values
+
+STEP 6: Deploy
+   - Click "Deploy" button
+   - Wait 2-3 minutes
+   - Vercel will build and deploy your app
+
+STEP 7: Get Your URL
+   After deployment completes, you'll get a URL like:
+   https://holykids-timer.vercel.app
+
+   Click it to open your site!
+
+================================================================================
+🚀 OPTION 2: DEPLOY TO RENDER
+================================================================================
+
+STEP 1: Go to Render
+   Open: https://render.com
+
+STEP 2: Sign In/Sign Up
+   - Click "Get Started" or "Sign Up"
+   - Choose "Continue with GitHub"
+   - Authorize Render to access your GitHub
+
+STEP 3: Create Web Service
+   - Click "New +" button (top right)
+   - Select "Web Service"
+   - You'll see your GitHub repositories
+   - Find "holykids-timer"
+   - Click "Connect"
+
+STEP 4: Configure Service
+   Name: holykids-attendance
+   Region: Oregon (or closest to you)
+   Branch: main
+   Root Directory: (leave blank)
+   Runtime: Node
+   Build Command: npm install && npm run build
+   Start Command: npm start
+   Instance Type: Free
+
+STEP 5: Add Environment Variables
+   Scroll down to "Environment Variables"
+   Click "Add Environment Variable"
+   Add these 3:
+
+   Variable 1:
+   Key: NEXT_PUBLIC_SUPABASE_URL
+   Value: [paste your Supabase URL]
+
+   Variable 2:
+   Key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+   Value: [paste your Supabase anon key]
+
+   Variable 3:
+   Key: SUPABASE_SERVICE_ROLE_KEY
+   Value: [paste your Supabase service role key]
+
+STEP 6: Create Web Service
+   - Click "Create Web Service" button at bottom
+   - Wait 3-5 minutes
+   - Render will build and deploy your app
+
+STEP 7: Get Your URL
+   After deployment completes, you'll get a URL like:
+   https://holykids-attendance.onrender.com
+
+   Click it to open your site!
+
+================================================================================
+❓ WHY ISN'T IT AUTO-DEPLOYING?
+================================================================================
+
+Vercel and Render need to be CONNECTED to your GitHub repository first.
+They don't automatically know about your repo until you:
+1. Sign up/Sign in
+2. Connect your GitHub account
+3. Import/Connect your repository
+4. Configure environment variables
+5. Click Deploy
+
+After the FIRST deployment, future pushes to GitHub will auto-deploy!
+
+================================================================================
+✅ WHAT TO DO RIGHT NOW:
+================================================================================
+
+1. Choose Vercel OR Render (Vercel is easier)
+2. Follow the steps above
+3. Add your Supabase environment variables
+4. Click Deploy
+5. Wait a few minutes
+6. Your site will be live!
+
+================================================================================
+🔑 GET YOUR SUPABASE KEYS:
+================================================================================
+
+1. Go to https://supabase.com
+2. Open your project
+3. Click "Settings" (gear icon at bottom left)
+4. Click "API" in the left sidebar
+5. You'll see:
+   - Project URL (copy this)
+   - anon public key (copy this)
+   - service_role key (copy this - click "Reveal" first)
+
+Use these values for the environment variables!
+
+================================================================================
+⚠️ IMPORTANT:
+================================================================================
+
+The code on GitHub is READY and has NO ERRORS.
+
+The "+163-0 lines" is just a documentation file - NOT an error!
+
+You just need to manually deploy for the first time.
+
+After that, every time you push to GitHub, it will auto-deploy!
+
+================================================================================
