@@ -67,9 +67,9 @@ export default function AdminDashboard() {
     
     // Set recent check-ins with staff info
     const checkins: RecentCheckin[] = todayRecords
-      .filter(r => r.check_in_time)
-      .map(r => {
-        const staffMember = staffList.find(s => s.id === r.staff_id)
+      .filter((r: any) => r.check_in_time)
+      .map((r: any) => {
+        const staffMember = staffList.find((s: any) => s.id === r.staff_id)
         return {
           id: r.id,
           staff_id: r.staff_id,
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
           check_in_time: r.check_in_time || ''
         }
       })
-      .sort((a, b) => new Date(b.check_in_time).getTime() - new Date(a.check_in_time).getTime())
+      .sort((a: any, b: any) => new Date(b.check_in_time).getTime() - new Date(a.check_in_time).getTime())
       
     setRecentCheckins(checkins)
   }
