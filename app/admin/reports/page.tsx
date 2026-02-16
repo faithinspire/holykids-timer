@@ -76,8 +76,8 @@ export default function AdminReportsPage() {
           // Merge with existing staff list (avoid duplicates)
           setStaffList(prev => {
             const combined = [...prev, ...localStaff]
-            const unique = combined.filter((staff, index, self) =>
-              index === self.findIndex(s => s.id === staff.id || s.staff_id === staff.staff_id)
+            const unique = combined.filter((staff: any, index: number, self: any[]) =>
+              index === self.findIndex((s: any) => s.id === staff.id || s.staff_id === staff.staff_id)
             )
             return unique
           })
@@ -129,8 +129,8 @@ export default function AdminReportsPage() {
             // Merge with localStorage data
             setAttendanceData(prev => {
               const combined = [...prev, ...attendance]
-              const unique = combined.filter((record, index, self) =>
-                index === self.findIndex(r => r.id === record.id)
+              const unique = combined.filter((record: any, index: number, self: any[]) =>
+                index === self.findIndex((r: any) => r.id === record.id)
               )
               return unique
             })
@@ -166,9 +166,9 @@ export default function AdminReportsPage() {
     const data = getFilteredData()
     
     const headers = ['Date', 'Staff ID', 'Name', 'Department', 'Check In', 'Check Out', 'Status', 'Late']
-    const rows = data.map(a => [
+    const rows = data.map((a: any) => [
       a.attendance_date,
-      staffList.find(s => s.id === a.staff_id)?.staff_id || '',
+      staffList.find((s: any) => s.id === a.staff_id)?.staff_id || '',
       a.staff ? `${a.staff.first_name} ${a.staff.last_name}` : '',
       a.staff?.department || '',
       a.check_in_time ? new Date(a.check_in_time).toLocaleTimeString() : '--:--',

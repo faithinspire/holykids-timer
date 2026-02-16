@@ -184,7 +184,7 @@ export default function AdminStaffPage() {
     }
 
     // Remove locally
-    const updatedList = staffList.filter(s => s.id !== id)
+    const updatedList = staffList.filter((s: any) => s.id !== id)
     localStorage.setItem('holykids_staff', JSON.stringify(updatedList))
     setStaffList(updatedList)
     toast.success('Staff deleted')
@@ -270,7 +270,7 @@ export default function AdminStaffPage() {
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border-l-4 border-purple-500 dark:border-purple-400 hover:scale-105 transition-transform">
             <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Face ID</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{staffList.filter(s => s.face_enrolled).length}</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{staffList.filter((s: any) => s.face_enrolled).length}</p>
           </div>
         </div>
 
