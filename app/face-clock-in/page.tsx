@@ -64,7 +64,7 @@ export default function FaceClockInPage() {
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop())
+      stream.getTracks().forEach((track: any) => track.stop())
       setStream(null)
     }
     if (videoRef.current) {
