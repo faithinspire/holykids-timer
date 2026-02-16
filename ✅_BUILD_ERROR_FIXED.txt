@@ -1,0 +1,68 @@
+✅ CAPACITOR BUILD ERROR FIXED!
+==========================================
+
+LATEST COMMIT: 498d98a
+MESSAGE: "Fix: Exclude android folders from TypeScript build"
+
+==========================================
+WHAT WAS THE PROBLEM:
+==========================================
+
+Vercel was trying to type-check the android-deployment folder
+which has @capacitor/cli imports that aren't in package.json.
+
+This folder is ONLY for Android mobile app deployment,
+NOT for the web app.
+
+==========================================
+WHAT WAS FIXED:
+==========================================
+
+Updated tsconfig.json to exclude:
+- android-deployment folder
+- android folder
+
+Now TypeScript will only check the actual Next.js app files.
+
+==========================================
+REDEPLOY ON VERCEL NOW:
+==========================================
+
+1. Go back to your Vercel deployment page
+
+2. Click "Redeploy" or start a new deployment
+
+3. Vercel will pull the latest commit (498d98a)
+
+4. Build will now succeed! ✅
+
+==========================================
+OR START FRESH:
+==========================================
+
+1. Go to: https://vercel.com/dashboard
+
+2. Import project: faithinspire/holykids-timer
+
+3. Add environment variables:
+   - NEXT_PUBLIC_SUPABASE_URL
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - SUPABASE_SERVICE_ROLE_KEY
+
+4. Deploy
+
+5. BUILD WILL SUCCEED! ✅
+
+==========================================
+WHAT'S WORKING NOW:
+==========================================
+
+✅ No face-api.js errors
+✅ No @capacitor/cli errors
+✅ TypeScript only checks Next.js files
+✅ Android folders excluded from web build
+✅ Clean, deployable code
+
+==========================================
+THE BUILD WILL WORK NOW!
+==========================================

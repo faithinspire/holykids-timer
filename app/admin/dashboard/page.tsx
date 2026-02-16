@@ -55,7 +55,7 @@ export default function AdminDashboard() {
 
     setIsDemoMode(false)
     const presentIds = new Set(todayRecords.filter(r => r.check_in_time).map(r => r.staff_id))
-    const present = staffList.filter(s => presentIds.has(s.id)).length
+    const present = staffList.filter((s: any) => presentIds.has(s.id)).length
     
     setStats({
       total_staff: staffList.length,
