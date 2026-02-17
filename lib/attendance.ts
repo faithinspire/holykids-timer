@@ -19,34 +19,52 @@ export class AttendanceService {
     return AttendanceService.instance
   }
 
-  getTodayAttendance(): AttendanceRecord[] {
+  getTodayAttendance(staffId?: string): AttendanceRecord[] {
     const today = new Date().toISOString().split('T')[0]
     const records = localStorage.getItem('holykids_attendance')
     if (!records) return []
     
     const allRecords: AttendanceRecord[] = JSON.parse(records)
-    return allRecords.filter(r => r.date === today)
-  }
-
-  checkIn(staffId: string, staffName: string, department: string): AttendanceRecord {
-    const today = new Date().toISOString().split('T')[0]
-    const now = new Date().toISOString()
+    const todayRecords = allRecords.filter(r => r.date === today)
     
-    const record: AttendanceRecord = {
-      id: Date.now().toString(),
-      staff_id: staffId,
-      staff_name: staffName,
-      staff_department: department,
-      check_in_time: now,
-      date: today,
-      status: 'present'
+    if (staffId) {
+      return todayRecords.filter(r => r.staff_id === staffId)
     }
     
-    const records = this.getTodayAttendance()
-    records.push(record)
-    localStorage.setItem('holykids_attendance', JSON.stringify(records))
-    
-    return record
+    return todayRecords
+  }
+
+  async checkIn(data: {
+    staff_id: string
+    staff_name?: string
+    timestamp: string
+    method?: string
+    location?: string
+    device_info?: any
+    credential_used?: string
+  }): Promise<{ success: boolean; record?: AttendanceRecord; error?: string }> {
+    try {
+      const today = new Date(data.timestamp).toISOString().split('T')[0]
+      
+      const record: AttendanceRecord = {
+        id: Date.now().toString(),
+        staff_id: data.staff_id,
+        staff_name: data.staff_name,
+        staff_department: '',
+        check_in_time: data.timestamp,
+        date: today,
+        status: 'present'
+      }
+      
+      const allRecords = localStorage.getItem('holykids_attendance')
+      const records: AttendanceRecord[] = allRecords ? JSON.parse(allRecords) : []
+      records.push(record)
+      localStorage.setItem('holykids_attendance', JSON.stringify(records))
+      
+      return { success: true, record }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
   }
 
   checkOut(staffId: string): AttendanceRecord | null {
