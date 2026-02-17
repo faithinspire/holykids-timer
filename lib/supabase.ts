@@ -9,7 +9,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
 
 export function getSupabaseClient() {
   if (!supabase) {
-    console.warn('Supabase not configured - using localStorage only')
+    console.warn('Supabase not configured - database unavailable')
     return null
   }
   return supabase
