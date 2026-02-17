@@ -14,12 +14,13 @@ interface StaffMember {
   first_name: string
   last_name: string
   email?: string
-  department: string
+  department: string | string[]
   phone?: string
   role: string
   pin: string
   biometric_enrolled: boolean
   biometric_id?: string
+  face_enrolled?: boolean
   is_active: boolean
   created_at?: string
 }
