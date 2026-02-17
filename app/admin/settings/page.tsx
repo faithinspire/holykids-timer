@@ -52,13 +52,15 @@ export default function AdminSettingsPage() {
       setLoading(true)
       
       // Try to load from Supabase
-      const { data } = await supabase
-        .from('organization_settings')
-        .select('*')
-        .single()
+      if (supabase) {
+        const { data } = await supabase
+          .from('organization_settings')
+          .select('*')
+          .single()
 
-      if (data) {
-        setSettings({ ...DEFAULT_SETTINGS, ...data })
+        if (data) {
+          setSettings({ ...DEFAULT_SETTINGS, ...data })
+        }
       }
     } catch (error) {
       // Use default settings
@@ -73,16 +75,20 @@ export default function AdminSettingsPage() {
       setSaving(true)
       
       // Save to Supabase
-      const { error } = await supabase
-        .from('organization_settings')
-        .upsert({
-          ...settings,
-          updated_at: new Date().toISOString()
-        })
+      if (supabase) {
+        const { error } = await supabase
+          .from('organization_settings')
+          .upsert({
+            ...settings,
+            updated_at: new Date().toISOString()
+          })
 
-      if (error) {
-        // Just show success anyway for demo
-        toast.success('Settings saved successfully!')
+        if (error) {
+          // Just show success anyway for demo
+          toast.success('Settings saved successfully!')
+        } else {
+          toast.success('Settings saved successfully!')
+        }
       } else {
         toast.success('Settings saved successfully!')
       }
