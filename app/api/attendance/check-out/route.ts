@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AttendanceService } from '@/lib/attendance'
+import { ServerAttendanceService } from '@/lib/serverAttendance'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const attendanceService = AttendanceService.getInstance()
+    const attendanceService = ServerAttendanceService.getInstance()
 
     // Check if checked in today
-    const todayRecords = attendanceService.getTodayAttendance(staff_id)
+    const todayRecords = await attendanceService.getTodayAttendance(staff_id)
     if (todayRecords.length === 0 || !todayRecords[0].check_in_time) {
       return NextResponse.json(
         { error: 'No check-in found for today. Please check in first.' },

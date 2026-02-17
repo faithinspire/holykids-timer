@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AttendanceService } from '@/lib/attendance'
+import { ServerAttendanceService } from '@/lib/serverAttendance'
 import { CheckInData } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const attendanceService = AttendanceService.getInstance()
+    const attendanceService = ServerAttendanceService.getInstance()
 
     // Check if already checked in today
-    const todayRecords = attendanceService.getTodayAttendance(staff_id)
+    const todayRecords = await attendanceService.getTodayAttendance(staff_id)
     if (todayRecords.length > 0 && todayRecords[0].check_in_time) {
       return NextResponse.json(
         { error: 'Already checked in today' },
@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const staff_id = searchParams.get('staff_id')
 
-    const attendanceService = AttendanceService.getInstance()
-    const records = attendanceService.getTodayAttendance(staff_id || undefined)
+    const attendanceService = ServerAttendanceService.getInstance()
+    const records = await attendanceService.getTodayAttendance(staff_id || undefined)
 
     return NextResponse.json({
       success: true,

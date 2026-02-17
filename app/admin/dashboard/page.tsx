@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useRouter } from 'next/navigation'
-import { AttendanceService } from '@/lib/attendance'
+import { ClientAttendanceStorage } from '@/lib/clientAttendance'
 import toast from 'react-hot-toast'
 
 interface RecentCheckin {
@@ -37,8 +37,9 @@ export default function AdminDashboard() {
     const localData = localStorage.getItem('holykids_staff')
     const staffList = localData ? JSON.parse(localData) : []
     
-    // Load today's attendance
-    const todayRecords = attendanceService.getTodayAttendance()
+    // Load today's attendance from client storage
+    const attendanceStorage = ClientAttendanceStorage.getInstance()
+    const todayRecords = attendanceStorage.getTodayAttendance()
     
     if (staffList.length === 0) {
       setIsDemoMode(true)

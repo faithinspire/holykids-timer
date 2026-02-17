@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AttendanceService } from '@/lib/attendance'
+import { ServerAttendanceService } from '@/lib/serverAttendance'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const attendanceService = AttendanceService.getInstance()
+    const attendanceService = ServerAttendanceService.getInstance()
     const todayAttendance = await attendanceService.getTodayAttendance(staff_id)
 
     return NextResponse.json({

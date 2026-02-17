@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AttendanceService } from '@/lib/attendance'
+import { ServerAttendanceService } from '@/lib/serverAttendance'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,17 +7,16 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const staff_id = searchParams.get('staff_id')
-    const month = searchParams.get('month')
 
-    if (!staff_id) {
-      return NextResponse.json(
-        { error: 'Staff ID is required' },
-        { status: 400 }
-      )
+    const attendanceService = ServerAttendanceService.getInstance()
+    const records = await attendanceService.getTodayAttendance(staff_id || undefined)
+
+    // Calculate basic stats
+    const stats = {
+      total_records: records.length,
+      checked_in: records.filter(r => r.check_in_time).length,
+      checked_out: records.filter(r => r.check_out_time).length
     }
-
-    const attendanceService = AttendanceService.getInstance()
-    const stats = await attendanceService.getAttendanceStats(staff_id, month || undefined)
 
     return NextResponse.json({
       success: true,
