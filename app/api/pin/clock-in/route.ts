@@ -1,5 +1,5 @@
-import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { getSupabaseClient } from '@/lib/supabase'
 import crypto from 'crypto'
 
 function hashPin(pin: string): string {
@@ -8,14 +8,10 @@ function hashPin(pin: string): string {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { staff_number, pin, clock_type } = body
+    const { staff_number, pin, clock_type } = await request.json()
 
     if (!staff_number || !pin || !clock_type) {
-      return NextResponse.json(
-        { error: 'Staff number, PIN, and clock type are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const supabase = getSupabaseClient()
@@ -29,40 +25,19 @@ export async function POST(request: Request) {
       .single()
 
     if (staffError || !staff) {
-      await supabase.from('failed_clock_attempts').insert({
-        attempt_type: 'pin',
-        reason: 'Invalid staff number',
-        attempted_at: new Date().toISOString()
-      })
-
-      return NextResponse.json(
-        { error: 'Invalid staff number or PIN' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const pinMatches = staff.pin_hash 
-      ? staff.pin_hash === pinHash 
-      : staff.pin === pin
+    const pinMatches = staff.pin_hash ? staff.pin_hash === pinHash : staff.pin === pin
 
     if (!pinMatches) {
-      await supabase.from('failed_clock_attempts').insert({
-        attempt_type: 'pin',
-        staff_id: staff.id,
-        reason: 'Incorrect PIN',
-        attempted_at: new Date().toISOString()
-      })
-
-      return NextResponse.json(
-        { error: 'Invalid staff number or PIN' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     const now = new Date()
     const today = now.toISOString().split('T')[0]
 
-    const { data: existingAttendance } = await supabase
+    const { data: existing } = await supabase
       .from('attendance')
       .select('*')
       .eq('staff_id', staff.id)
@@ -70,18 +45,13 @@ export async function POST(request: Request) {
       .single()
 
     if (clock_type === 'check_in') {
-      if (existingAttendance && existingAttendance.check_in_time) {
-        return NextResponse.json(
-          { error: 'Already clocked in today', existing: existingAttendance },
-          { status: 400 }
-        )
+      if (existing?.check_in_time) {
+        return NextResponse.json({ error: 'Already clocked in' }, { status: 400 })
       }
 
-      const checkInHour = now.getHours()
-      const checkInMinute = now.getMinutes()
-      const isLate = checkInHour > 8 || (checkInHour === 8 && checkInMinute > 0)
+      const isLate = now.getHours() > 8 || (now.getHours() === 8 && now.getMinutes() > 0)
 
-      const { data: attendance, error: attendanceError } = await supabase
+      const { error } = await supabase
         .from('attendance')
         .insert({
           staff_id: staff.id,
@@ -91,80 +61,52 @@ export async function POST(request: Request) {
           is_late: isLate,
           clock_method: 'pin'
         })
-        .select()
-        .single()
 
-      if (attendanceError) {
-        return NextResponse.json(
-          { error: attendanceError.message },
-          { status: 500 }
-        )
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Clocked in successfully',
         staff: {
           id: staff.id,
           staff_id: staff.staff_id,
           full_name: `${staff.first_name} ${staff.last_name}`,
           department: staff.department,
-          clock_in_time: now.toISOString(),
+          check_in_time: now.toISOString(),
           is_late: isLate
-        },
-        attendance
+        }
       })
-    } else if (clock_type === 'check_out') {
-      if (!existingAttendance) {
-        return NextResponse.json(
-          { error: 'No check-in record found for today' },
-          { status: 400 }
-        )
+    } else {
+      if (!existing) {
+        return NextResponse.json({ error: 'No check-in found' }, { status: 400 })
       }
 
-      if (existingAttendance.check_out_time) {
-        return NextResponse.json(
-          { error: 'Already clocked out today', existing: existingAttendance },
-          { status: 400 }
-        )
+      if (existing.check_out_time) {
+        return NextResponse.json({ error: 'Already clocked out' }, { status: 400 })
       }
 
-      const { data: attendance, error: attendanceError } = await supabase
+      const { error } = await supabase
         .from('attendance')
         .update({ check_out_time: now.toISOString() })
-        .eq('id', existingAttendance.id)
-        .select()
-        .single()
+        .eq('id', existing.id)
 
-      if (attendanceError) {
-        return NextResponse.json(
-          { error: attendanceError.message },
-          { status: 500 }
-        )
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Clocked out successfully',
         staff: {
           id: staff.id,
           staff_id: staff.staff_id,
           full_name: `${staff.first_name} ${staff.last_name}`,
           department: staff.department,
           check_out_time: now.toISOString()
-        },
-        attendance
+        }
       })
     }
-
-    return NextResponse.json(
-      { error: 'Invalid clock type' },
-      { status: 400 }
-    )
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

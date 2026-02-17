@@ -3,21 +3,14 @@ import { getSupabaseClient } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { staff_id, face_embedding, pin_hash } = body
+    const { staff_id, face_embedding, pin_hash } = await request.json()
 
     if (!staff_id || !face_embedding || !pin_hash) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     if (!Array.isArray(face_embedding)) {
-      return NextResponse.json(
-        { success: false, error: 'face_embedding must be an array' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid face_embedding' }, { status: 400 })
     }
 
     const supabase = getSupabaseClient()
@@ -28,26 +21,17 @@ export async function POST(request: NextRequest) {
         face_embedding: JSON.stringify(face_embedding),
         face_enrolled: true,
         face_enrolled_at: new Date().toISOString(),
-        pin_hash: pin_hash
+        pin_hash
       })
       .eq('id', staff_id)
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Face enrolled successfully'
-    })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
@@ -55,35 +39,26 @@ export async function GET() {
   try {
     const supabase = getSupabaseClient()
 
-    const { data: enrolledStaff, error } = await supabase
+    const { data, error } = await supabase
       .from('staff')
       .select('id, staff_id, first_name, last_name, department, face_embedding')
       .eq('face_enrolled', true)
       .not('face_embedding', 'is', null)
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const enrolled_faces = enrolledStaff?.map(staff => ({
-      id: staff.id,
-      staff_id: staff.staff_id,
-      name: `${staff.first_name} ${staff.last_name}`,
-      department: staff.department,
-      embedding: JSON.parse(staff.face_embedding)
+    const enrolled_faces = data?.map(s => ({
+      id: s.id,
+      staff_id: s.staff_id,
+      name: `${s.first_name} ${s.last_name}`,
+      department: s.department,
+      embedding: JSON.parse(s.face_embedding)
     })) || []
 
-    return NextResponse.json({
-      success: true,
-      enrolled_faces
-    })
+    return NextResponse.json({ enrolled_faces })
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
