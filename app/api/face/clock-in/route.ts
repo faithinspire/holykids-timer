@@ -47,12 +47,10 @@ export async function POST(request: Request) {
       
       staffData = data
     } else {
-      // Fallback to localStorage
-      return NextResponse.json({
-        success: true,
-        warning: 'Using local storage only',
-        staff_id
-      })
+      return NextResponse.json(
+        { error: 'Database not configured. Please contact administrator.' },
+        { status: 503 }
+      )
     }
 
     const now = new Date()

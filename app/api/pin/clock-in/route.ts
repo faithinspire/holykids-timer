@@ -37,29 +37,10 @@ export async function POST(request: Request) {
     const supabase = createServerClient()
 
     if (!supabase) {
-      // Fallback to localStorage
-      const localStaff = localStorage.getItem('holykids_staff')
-      if (localStaff) {
-        const staff = JSON.parse(localStaff)
-        const matchedStaff = staff.find((s: any) => 
-          s.staff_id === staff_number && s.pin === pin
-        )
-        
-        if (matchedStaff) {
-          return NextResponse.json({
-            success: true,
-            warning: 'Using local storage only',
-            staff: {
-              id: matchedStaff.id,
-              staff_id: matchedStaff.staff_id,
-              full_name: `${matchedStaff.first_name} ${matchedStaff.last_name}`,
-              department: matchedStaff.department
-            }
-          })
-        }
-      }
-      
-      return NextResponse.json({ error: 'Invalid staff number or PIN' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Database not configured. Please contact administrator.' },
+        { status: 503 }
+      )
     }
 
     // Hash the provided PIN
