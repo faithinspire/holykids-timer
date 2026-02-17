@@ -26,7 +26,6 @@ export default function AdminDashboard() {
   })
   const [recentCheckins, setRecentCheckins] = useState<RecentCheckin[]>([])
   const [isDemoMode, setIsDemoMode] = useState(true)
-  const attendanceService = AttendanceService.getInstance()
 
   useEffect(() => {
     loadData()
