@@ -167,7 +167,7 @@ export default function AdminStaffPage() {
       setShowPinModal(true)
     } finally {
       setSaving(false)
-      setNewStaff({ first_name: '', last_name: '', email: '', department: '', phone: '', role: 'Support Staff' })
+      setNewStaff({ first_name: '', last_name: '', email: '', department: [], phone: '', role: 'Teacher' })
     }
   }
 
