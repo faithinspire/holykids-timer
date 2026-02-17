@@ -1,20 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
-
-function createServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!url || !key || url === '=' || url.trim() === '' || !url.startsWith('http')) {
-    return null
-  }
-  
-  try {
-    return createClient(url, key)
-  } catch (error) {
-    return null
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -28,16 +13,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServerClient()
-
-    if (!supabase) {
-      // Return success for local storage mode
-      return NextResponse.json({ 
-        success: true,
-        message: 'Biometric enrolled locally',
-        local: true
-      })
-    }
+    const supabase = getSupabaseClient()
 
     // Update staff biometric enrollment in Supabase
     const { data, error } = await supabase
@@ -63,6 +39,9 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('Server error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Database configuration error' },
+      { status: 500 }
+    )
   }
 }

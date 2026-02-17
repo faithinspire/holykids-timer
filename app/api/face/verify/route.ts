@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { getSupabaseClient } from '@/lib/supabase'
 
 // Simple face detection using image analysis
 // This is a placeholder - you'll need to integrate with a proper face recognition service
@@ -79,6 +74,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ [SERVER] Face detected, comparing with enrolled staff...')
+
+    const supabase = getSupabaseClient()
 
     // Step 2: Get all enrolled staff
     const { data: enrolledStaff, error: fetchError } = await supabase

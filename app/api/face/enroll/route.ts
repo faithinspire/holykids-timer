@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { getSupabaseClient } from '@/lib/supabase'
 
 // Server-side face detection
 async function detectFaceAndExtractEmbedding(imageBase64: string): Promise<{
@@ -54,6 +49,8 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ [SERVER] Face detected, saving to database...')
 
+    const supabase = getSupabaseClient()
+
     // Save to database
     const { error } = await supabase
       .from('staff')
@@ -92,6 +89,8 @@ export async function POST(request: NextRequest) {
 // GET endpoint to retrieve enrolled faces
 export async function GET() {
   try {
+    const supabase = getSupabaseClient()
+
     const { data: enrolledStaff, error } = await supabase
       .from('staff')
       .select('id, staff_id, first_name, last_name, department, face_embedding')

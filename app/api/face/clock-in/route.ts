@@ -1,20 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
-
-function createServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!url || !key || url === '=' || url.trim() === '' || !url.startsWith('http')) {
-    return null
-  }
-  
-  try {
-    return createClient(url, key)
-  } catch (error) {
-    return null
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -28,29 +13,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = getSupabaseClient()
 
     // Get staff details
-    let staffData: any = null
-    
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('id', staff_id)
-        .eq('is_active', true)
-        .single()
+    const { data: staffData, error: staffError } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('id', staff_id)
+      .eq('is_active', true)
+      .single()
 
-      if (error || !data) {
-        return NextResponse.json({ error: 'Staff not found' }, { status: 404 })
-      }
-      
-      staffData = data
-    } else {
-      return NextResponse.json(
-        { error: 'Database not configured. Please contact administrator.' },
-        { status: 503 }
-      )
+    if (staffError || !staffData) {
+      return NextResponse.json({ error: 'Staff not found' }, { status: 404 })
     }
 
     const now = new Date()
@@ -168,11 +142,7 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { attempt_type, staff_id, reason, device_id } = body
 
-    const supabase = createServerClient()
-
-    if (!supabase) {
-      return NextResponse.json({ success: true, warning: 'Local mode' })
-    }
+    const supabase = getSupabaseClient()
 
     await supabase
       .from('failed_clock_attempts')
@@ -187,6 +157,9 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error logging failed attempt:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Failed to log attempt' },
+      { status: 500 }
+    )
   }
 }

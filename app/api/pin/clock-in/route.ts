@@ -1,21 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-
-function createServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!url || !key || url === '=' || url.trim() === '' || !url.startsWith('http')) {
-    return null
-  }
-  
-  try {
-    return createClient(url, key)
-  } catch (error) {
-    return null
-  }
-}
 
 // Hash PIN using SHA-256
 function hashPin(pin: string): string {
@@ -34,14 +19,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServerClient()
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not configured. Please contact administrator.' },
-        { status: 503 }
-      )
-    }
+    const supabase = getSupabaseClient()
 
     // Hash the provided PIN
     const pinHash = hashPin(pin)

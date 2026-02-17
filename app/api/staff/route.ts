@@ -1,38 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
-
-// For server-side operations
-function createServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  console.log('Supabase URL:', url)
-  console.log('Supabase URL configured:', !!url)
-  console.log('Supabase Service Key configured:', !!key)
-  
-  // Check if URL is valid
-  if (!url || !key || url === '=' || url.trim() === '' || !url.startsWith('http')) {
-    console.warn('Supabase not configured properly - staff will be stored locally only')
-    return null
-  }
-  
-  try {
-    return createClient(url, key)
-  } catch (error) {
-    console.error('Error creating Supabase client:', error)
-    return null
-  }
-}
 
 export async function GET() {
   try {
-    const supabase = createServerClient()
-    
-    // If Supabase is not configured, return empty array
-    if (!supabase) {
-      console.log('Supabase not configured, returning empty staff list')
-      return NextResponse.json({ staff: [], warning: 'Using local storage only' })
-    }
+    const supabase = getSupabaseClient()
     
     // Fetch all staff from Supabase
     const { data: staff, error } = await supabase
@@ -49,7 +20,10 @@ export async function GET() {
     return NextResponse.json({ staff: staff || [] })
   } catch (error: any) {
     console.error('Server error:', error)
-    return NextResponse.json({ staff: [], error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { staff: [], error: error.message || 'Database configuration error' },
+      { status: 500 }
+    )
   }
 }
 
@@ -66,43 +40,16 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = getSupabaseClient()
 
     // Generate staff ID and PIN
     const staffId = `STF${Date.now().toString().slice(-4)}`
-    const staffPin = pin || Math.floor(1000 + Math.random() * 9000).toString() // 4-digit PIN
+    const staffPin = pin || Math.floor(1000 + Math.random() * 9000).toString()
 
     // Convert department array to comma-separated string for database
     const departmentString = Array.isArray(department) ? department.join(', ') : department
 
-    // If Supabase is not configured, return local data
-    if (!supabase) {
-      console.log('Supabase not configured, staff will be stored locally')
-      const localStaff = {
-        id: Date.now().toString(),
-        staff_id: staffId,
-        first_name,
-        last_name,
-        email: email || `${staffId.toLowerCase()}@holykids.edu`,
-        department: department, // Keep as array for local storage
-        phone: phone || '',
-        role: role || 'Teacher',
-        pin: staffPin,
-        biometric_enrolled: false,
-        is_active: true,
-        created_at: new Date().toISOString()
-      }
-      
-      return NextResponse.json({ 
-        success: true, 
-        staff: localStaff,
-        message: 'Staff saved locally',
-        warning: 'Cloud storage not configured. Data saved to browser only.'
-      })
-    }
-
     // Insert staff into Supabase
-    console.log('Inserting staff into Supabase:', staffId)
     const { data, error } = await supabase
       .from('staff')
       .insert({
@@ -110,7 +57,7 @@ export async function POST(request: Request) {
         first_name,
         last_name,
         email: email || `${staffId.toLowerCase()}@holykids.edu`,
-        department: departmentString, // Store as comma-separated string
+        department: departmentString,
         phone: phone || '',
         role: role || 'Teacher',
         pin: staffPin,
@@ -139,7 +86,10 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('Server error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Database configuration error' },
+      { status: 500 }
+    )
   }
 }
 
@@ -152,15 +102,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Staff ID is required' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
-
-    // If Supabase is not configured, return success (already deleted locally)
-    if (!supabase) {
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Staff deleted locally' 
-      })
-    }
+    const supabase = getSupabaseClient()
 
     // Soft delete - update is_active to false
     const { error } = await supabase
@@ -176,6 +118,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true, message: 'Staff deleted successfully' })
   } catch (error: any) {
     console.error('Server error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Database configuration error' },
+      { status: 500 }
+    )
   }
 }
