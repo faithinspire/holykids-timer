@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { logAudit } from '@/lib/auditLog'
 
 export async function GET() {
   try {
@@ -78,6 +79,13 @@ export async function POST(request: Request) {
       department: data.department.includes(',') ? data.department.split(', ') : [data.department],
       pin: staffPin
     }
+
+    // Log audit (non-blocking)
+    logAudit({
+      staff_id: data.id,
+      action: 'staff_created',
+      details: `Created staff: ${first_name} ${last_name}`
+    }).catch(() => {})
 
     return NextResponse.json({ 
       success: true, 

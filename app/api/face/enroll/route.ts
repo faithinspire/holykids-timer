@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/lib/supabase'
+import { logAudit } from '@/lib/auditLog'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +29,12 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    logAudit({
+      staff_id,
+      action: 'face_enrolled',
+      details: 'Face biometric enrolled successfully'
+    }).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

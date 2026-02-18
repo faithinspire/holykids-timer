@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/lib/supabase'
+import { logAudit } from '@/lib/auditLog'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
+      logAudit({
+        staff_id,
+        action: 'clock_in_face',
+        details: `Face recognition clock in - ${staff.first_name} ${staff.last_name}`,
+        ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
+      }).catch(() => {})
+
       return NextResponse.json({
         success: true,
         staff: {
@@ -81,6 +89,13 @@ export async function POST(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
+
+      logAudit({
+        staff_id,
+        action: 'clock_out_face',
+        details: `Face recognition clock out - ${staff.first_name} ${staff.last_name}`,
+        ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
+      }).catch(() => {})
 
       return NextResponse.json({
         success: true,
