@@ -50,7 +50,8 @@ export class ServerAttendanceService {
         check_in_time: record.check_in_time,
         check_out_time: record.check_out_time,
         date: record.attendance_date,
-        status: record.status || 'present'
+        status: record.status || 'present',
+        is_late: record.is_late || false
       }))
     } catch (error) {
       console.error('getTodayAttendance error:', error)
@@ -121,7 +122,8 @@ export class ServerAttendanceService {
           check_in_time: inserted.check_in_time,
           check_out_time: inserted.check_out_time,
           date: inserted.attendance_date,
-          status: inserted.status
+          status: inserted.status,
+          is_late: inserted.is_late || false
         }
       }
     } catch (error: any) {
@@ -178,7 +180,8 @@ export class ServerAttendanceService {
           check_in_time: updated.check_in_time,
           check_out_time: updated.check_out_time,
           date: updated.attendance_date,
-          status: updated.status
+          status: updated.status,
+          is_late: updated.is_late || false
         }
       }
     } catch (error: any) {
