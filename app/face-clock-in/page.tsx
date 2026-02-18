@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+
+declare const faceapi: any
 
 export default function FaceClockInPage() {
   const router = useRouter()
@@ -16,11 +17,50 @@ export default function FaceClockInPage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [clockType, setClockType] = useState<'check_in' | 'check_out'>('check_in')
   const [result, setResult] = useState<any>(null)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [modelsError, setModelsError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadFaceModels()
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track: any) => track.stop())
+      }
+    }
+  }, [])
+
+  const loadFaceModels = async () => {
+    if (typeof window === 'undefined') return
+    
+    try {
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js'
+      script.async = true
+      
+      await new Promise((resolve, reject) => {
+        script.onload = resolve
+        script.onerror = reject
+        document.head.appendChild(script)
+      })
+
+      await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model')
+      await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model')
+      await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model')
+      
+      setModelsLoaded(true)
+    } catch (error) {
+      console.error('Failed to load face models:', error)
+      setModelsError('Failed to load face recognition models')
+    }
+  }
 
   const startCamera = async () => {
+    if (!modelsLoaded) {
+      toast.error('Face recognition models not loaded yet')
+      return
+    }
+
     try {
-      console.log('🎥 Starting camera...')
-      
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera not supported in this browser')
       }
@@ -36,18 +76,12 @@ export default function FaceClockInPage() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-        videoRef.current.autoplay = true
-        videoRef.current.playsInline = true
-        videoRef.current.muted = true
-        
-        await videoRef.current.play()
         setStream(mediaStream)
         setCameraActive(true)
         toast.success('Camera ready!')
-        console.log('✅ Camera active')
       }
     } catch (error: any) {
-      console.error('❌ Camera error:', error)
+      console.error('Camera error:', error)
       let errorMessage = 'Could not access camera'
       
       if (error.name === 'NotAllowedError') {
@@ -72,7 +106,6 @@ export default function FaceClockInPage() {
     }
     setCameraActive(false)
     setCapturedImage(null)
-    console.log('🛑 Camera stopped')
   }
 
   const captureAndVerify = async () => {
@@ -82,10 +115,8 @@ export default function FaceClockInPage() {
     }
 
     setProcessing(true)
-    console.log('📸 Capturing image...')
 
     try {
-      // Capture image from video
       const canvas = canvasRef.current
       const video = videoRef.current
       
@@ -99,15 +130,51 @@ export default function FaceClockInPage() {
       const imageData = canvas.toDataURL('image/jpeg', 0.8)
       setCapturedImage(imageData)
       
-      console.log('📤 Sending to server for face detection...')
       toast.loading('Detecting face...')
 
-      // Send to server for face detection and verification
+      const img = await faceapi.fetchImage(imageData)
+      const detection = await faceapi
+        .detectSingleFace(img)
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+
+      if (!detection) {
+        throw new Error('No face detected. Please try again.')
+      }
+
+      const faceEmbedding = Array.from(detection.descriptor)
+
+      const enrolledResponse = await fetch('/api/face/enroll')
+      const enrolledData = await enrolledResponse.json()
+
+      if (!enrolledData.enrolled_faces || enrolledData.enrolled_faces.length === 0) {
+        throw new Error('No enrolled faces found. Please enroll first.')
+      }
+
+      let bestMatch = null
+      let bestDistance = Infinity
+
+      for (const enrolled of enrolledData.enrolled_faces) {
+        const distance = faceapi.euclideanDistance(faceEmbedding, enrolled.embedding)
+        if (distance < bestDistance) {
+          bestDistance = distance
+          bestMatch = enrolled
+        }
+      }
+
+      const threshold = 0.6
+      if (bestDistance > threshold) {
+        throw new Error('Face not recognized. Please try again or use PIN.')
+      }
+
+      toast.dismiss()
+      toast.loading('Verifying...')
+
       const response = await fetch('/api/face/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image: imageData,
+          staff_id: bestMatch.id,
           clock_type: clockType
         })
       })
@@ -116,24 +183,25 @@ export default function FaceClockInPage() {
       toast.dismiss()
 
       if (response.ok && data.success) {
-        setResult(data)
+        setResult({
+          ...data,
+          confidence: 1 - bestDistance
+        })
         toast.success(`✅ ${clockType === 'check_in' ? 'Clocked in' : 'Clocked out'} successfully!`)
-        console.log('✅ Face verified:', data.staff)
         
-        // Auto-reset after 3 seconds
         setTimeout(() => {
           setResult(null)
           setCapturedImage(null)
           setProcessing(false)
         }, 3000)
       } else {
-        throw new Error(data.error || 'Face verification failed')
+        throw new Error(data.error || 'Clock operation failed')
       }
     } catch (error: any) {
-      console.error('❌ Verification error:', error)
+      console.error('Verification error:', error)
+      toast.dismiss()
       toast.error(error.message || 'Face verification failed')
       
-      // Show PIN fallback option
       setTimeout(() => {
         if (confirm('Face verification failed. Use PIN instead?')) {
           router.push('/pin-clock-in')
@@ -227,9 +295,11 @@ export default function FaceClockInPage() {
                   <p className="text-green-700 dark:text-green-400 font-bold text-xl mb-1">
                     {clockType === 'check_in' ? 'Clocked In' : 'Clocked Out'}
                   </p>
-                  <p className="text-green-600 dark:text-green-500 text-sm">
-                    Confidence: {Math.round(result.confidence * 100)}%
-                  </p>
+                  {result.confidence && (
+                    <p className="text-green-600 dark:text-green-500 text-sm">
+                      Confidence: {Math.round(result.confidence * 100)}%
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -249,11 +319,17 @@ export default function FaceClockInPage() {
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     Look directly at the camera for recognition
                   </p>
+                  {modelsError ? (
+                    <p className="text-red-600 mb-4">{modelsError}</p>
+                  ) : !modelsLoaded ? (
+                    <p className="text-yellow-600 mb-4">Loading face recognition models...</p>
+                  ) : null}
                   <button
                     onClick={startCamera}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 shadow-lg"
+                    disabled={!modelsLoaded}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    📸 Start Camera
+                    {modelsLoaded ? '📸 Start Camera' : 'Loading...'}
                   </button>
                 </div>
               ) : (
@@ -270,7 +346,8 @@ export default function FaceClockInPage() {
                         display: capturedImage ? 'none' : 'block',
                         minHeight: '300px',
                         maxHeight: '600px',
-                        backgroundColor: '#000'
+                        backgroundColor: '#000',
+                        border: '2px solid #8b5cf6'
                       }}
                     />
                     

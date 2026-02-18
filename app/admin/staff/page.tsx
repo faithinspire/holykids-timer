@@ -53,28 +53,16 @@ export default function AdminStaffPage() {
       const response = await fetch(API_URL)
       const data = await response.json()
       
-      if (data.warning) {
-        // Show warning about Supabase not configured
-        toast.error(data.warning, { duration: 5000 })
-      }
-      
       if (data.staff && Array.isArray(data.staff)) {
         setStaffList(data.staff)
-        // Also save to localStorage for offline access
-        localStorage.setItem('holykids_staff', JSON.stringify(data.staff))
       } else {
-        // Fallback to localStorage
-        const localData = localStorage.getItem('holykids_staff')
-        if (localData) {
-          setStaffList(JSON.parse(localData))
-        }
+        toast.error('Failed to load staff')
+        setStaffList([])
       }
     } catch (error) {
-      console.log('API not available, using localStorage')
-      const localData = localStorage.getItem('holykids_staff')
-      if (localData) {
-        setStaffList(JSON.parse(localData))
-      }
+      console.error('Failed to load staff:', error)
+      toast.error('Failed to load staff')
+      setStaffList([])
     } finally {
       setLoading(false)
     }
@@ -89,8 +77,6 @@ export default function AdminStaffPage() {
   }
 
   const handleAddStaff = async () => {
-    console.log('Add staff clicked', newStaff)
-    
     if (!newStaff.first_name || !newStaff.last_name || newStaff.department.length === 0) {
       toast.error('Please fill in First Name, Last Name, and at least one Department')
       return
@@ -108,10 +94,7 @@ export default function AdminStaffPage() {
       pin: pin
     }
 
-    console.log('Saving staff:', staffMember)
-
     try {
-      // Try to save to Supabase via API
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,52 +102,22 @@ export default function AdminStaffPage() {
       })
 
       const data = await response.json()
-      console.log('API response:', data)
 
       if (response.ok && data.success) {
-        if (data.warning) {
-          toast.success('✅ Staff saved locally (offline mode)')
-        } else {
-          toast.success('✅ Staff saved to cloud database!')
-        }
+        toast.success('✅ Staff registered successfully!')
         
-        // Show PIN after adding
         setNewPin(pin)
-        setSelectedStaff(data.staff || { ...staffMember, id: Date.now().toString(), staff_id: `STF${Date.now().toString().slice(-4)}`, biometric_enrolled: false, is_active: true })
+        setSelectedStaff(data.staff)
         setShowAddModal(false)
         setShowPinModal(true)
         
-        // Reload staff list
         await loadStaff()
       } else {
-        // API returned error, save locally
-        console.error('API error:', data.error || data.message)
-        throw new Error(data.error || 'API failed')
+        throw new Error(data.error || 'Failed to register staff')
       }
     } catch (error: any) {
-      console.log('Saving locally due to error:', error.message)
-      
-      // Save to localStorage as fallback
-      const localStaff: StaffMember = {
-        id: Date.now().toString(),
-        staff_id: `STF${Date.now().toString().slice(-4)}`,
-        ...staffMember,
-        biometric_enrolled: false,
-        is_active: true,
-        created_at: new Date().toISOString()
-      }
-
-      const updatedList = [...staffList, localStaff]
-      localStorage.setItem('holykids_staff', JSON.stringify(updatedList))
-      setStaffList(updatedList)
-      
-      toast.success('Staff saved locally (offline mode)')
-      
-      // Show PIN after adding
-      setNewPin(pin)
-      setSelectedStaff(localStaff)
-      setShowAddModal(false)
-      setShowPinModal(true)
+      console.error('Registration error:', error)
+      toast.error(error.message || 'Failed to register staff')
     } finally {
       setSaving(false)
       setNewStaff({ first_name: '', last_name: '', email: '', department: [], phone: '', role: 'Teacher' })
@@ -176,20 +129,20 @@ export default function AdminStaffPage() {
 
     setSaving(true)
     try {
-      // Try to delete from API
       const response = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' })
       
-      if (!response.ok) throw new Error('Delete failed')
-    } catch (error) {
-      console.log('Delete failed, removing locally')
-    }
+      if (!response.ok) {
+        throw new Error('Delete failed')
+      }
 
-    // Remove locally
-    const updatedList = staffList.filter((s: any) => s.id !== id)
-    localStorage.setItem('holykids_staff', JSON.stringify(updatedList))
-    setStaffList(updatedList)
-    toast.success('Staff deleted')
-    setSaving(false)
+      toast.success('Staff deleted')
+      await loadStaff()
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast.error('Failed to delete staff')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleViewPin = (staffMember: StaffMember) => {
@@ -198,8 +151,7 @@ export default function AdminStaffPage() {
   }
 
   const handleFaceEnrollment = (staffMember: StaffMember) => {
-    localStorage.setItem('face_enrollment_staff_id', staffMember.id)
-    window.location.href = '/staff/face-enrollment'
+    router.push(`/staff/face-enrollment?staff_id=${staffMember.id}`)
   }
 
   const departments = [
