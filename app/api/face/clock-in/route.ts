@@ -1,25 +1,52 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseClient } from '@/lib/supabase'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
-    const { staff_id, clock_type } = await request.json()
+    const { face_embedding, clock_type } = await request.json()
 
-    if (!staff_id || !clock_type) {
+    if (!face_embedding || !clock_type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const supabase = getSupabaseClient()
+    if (!Array.isArray(face_embedding)) {
+      return NextResponse.json({ error: 'Invalid face_embedding' }, { status: 400 })
+    }
 
-    const { data: staff, error: staffError } = await supabase
+    const supabase = createRouteHandlerClient({ cookies })
+
+    const { data: enrolledStaff, error: fetchError } = await supabase
       .from('staff')
-      .select('*')
-      .eq('id', staff_id)
+      .select('id, staff_id, first_name, last_name, department, face_embedding')
+      .eq('face_enrolled', true)
       .eq('is_active', true)
-      .single()
+      .not('face_embedding', 'is', null)
 
-    if (staffError || !staff) {
-      return NextResponse.json({ error: 'Staff not found' }, { status: 404 })
+    if (fetchError || !enrolledStaff || enrolledStaff.length === 0) {
+      return NextResponse.json({ error: 'No enrolled faces found' }, { status: 404 })
+    }
+
+    let bestMatch: any = null
+    let bestDistance = Infinity
+    const MATCH_THRESHOLD = 0.6
+
+    for (const staff of enrolledStaff) {
+      try {
+        const storedEmbedding = JSON.parse(staff.face_embedding)
+        const distance = euclideanDistance(face_embedding, storedEmbedding)
+        
+        if (distance < bestDistance && distance < MATCH_THRESHOLD) {
+          bestDistance = distance
+          bestMatch = staff
+        }
+      } catch (e) {
+        continue
+      }
+    }
+
+    if (!bestMatch) {
+      return NextResponse.json({ error: 'Face not recognized' }, { status: 404 })
     }
 
     const now = new Date()
@@ -28,7 +55,7 @@ export async function POST(request: Request) {
     const { data: existing } = await supabase
       .from('attendance')
       .select('*')
-      .eq('staff_id', staff_id)
+      .eq('staff_id', bestMatch.id)
       .eq('attendance_date', today)
       .single()
 
@@ -42,7 +69,7 @@ export async function POST(request: Request) {
       const { error } = await supabase
         .from('attendance')
         .insert({
-          staff_id,
+          staff_id: bestMatch.id,
           attendance_date: today,
           check_in_time: now.toISOString(),
           status: isLate ? 'present_late' : 'present',
@@ -57,10 +84,10 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         staff: {
-          id: staff.id,
-          staff_id: staff.staff_id,
-          full_name: `${staff.first_name} ${staff.last_name}`,
-          department: staff.department,
+          id: bestMatch.id,
+          staff_id: bestMatch.staff_id,
+          full_name: `${bestMatch.first_name} ${bestMatch.last_name}`,
+          department: bestMatch.department,
           check_in_time: now.toISOString(),
           is_late: isLate
         }
@@ -86,10 +113,10 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         staff: {
-          id: staff.id,
-          staff_id: staff.staff_id,
-          full_name: `${staff.first_name} ${staff.last_name}`,
-          department: staff.department,
+          id: bestMatch.id,
+          staff_id: bestMatch.staff_id,
+          full_name: `${bestMatch.first_name} ${bestMatch.last_name}`,
+          department: bestMatch.department,
           check_out_time: now.toISOString()
         }
       })
@@ -98,3 +125,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+function euclideanDistance(a: number[], b: number[]): number {
+  if (a.length !== b.length) return Infinity
+  let sum = 0
+  for (let i = 0; i < a.length; i++) {
+    sum += Math.pow(a[i] - b[i], 2)
+  }
+  return Math.sqrt(sum)
+}
+

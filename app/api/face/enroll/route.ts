@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseClient } from '@/lib/supabase'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { logAudit } from '@/lib/auditLog'
 
 export async function POST(request: NextRequest) {
@@ -14,7 +15,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid face_embedding' }, { status: 400 })
     }
 
-    const supabase = getSupabaseClient()
+    const supabase = createRouteHandlerClient({ cookies })
+
+    const { data: staff, error: staffError } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('id', staff_id)
+      .eq('is_active', true)
+      .single()
+
+    if (staffError || !staff) {
+      return NextResponse.json({ 
+        error: 'Staff not found' 
+      }, { status: 404 })
+    }
 
     const { error } = await supabase
       .from('staff')
@@ -27,6 +41,7 @@ export async function POST(request: NextRequest) {
       .eq('id', staff_id)
 
     if (error) {
+      console.error('Enrollment error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -38,13 +53,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
+    console.error('Enrollment error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function GET() {
   try {
-    const supabase = getSupabaseClient()
+    const supabase = createRouteHandlerClient({ cookies })
 
     const { data, error } = await supabase
       .from('staff')
@@ -70,3 +86,4 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

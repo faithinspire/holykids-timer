@@ -18,7 +18,7 @@ export async function logAudit(data: {
         details: data.details || null,
         ip_address: data.ip_address || null,
         user_agent: data.user_agent || null,
-        timestamp: new Date().toISOString()
+        created_at: new Date().toISOString()
       })
 
     if (error) {

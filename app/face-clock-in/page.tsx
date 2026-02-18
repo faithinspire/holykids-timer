@@ -170,11 +170,11 @@ export default function FaceClockInPage() {
       toast.dismiss()
       toast.loading('Verifying...')
 
-      const response = await fetch('/api/face/verify', {
+      const response = await fetch('/api/face/clock-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          staff_id: bestMatch.id,
+          face_embedding: faceEmbedding,
           clock_type: clockType
         })
       })
