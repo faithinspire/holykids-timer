@@ -50,6 +50,7 @@ export async function GET() {
       .from('staff')
       .select('id, staff_id, first_name, last_name, department, face_embedding')
       .eq('face_enrolled', true)
+      .eq('is_active', true)
       .not('face_embedding', 'is', null)
 
     if (error) {
