@@ -1,0 +1,26 @@
+URGENT: CHECK YOUR STAFF API NOW
+=====================================
+
+Your admin/staff page is stuck loading with "Staff not found" error.
+
+DO THIS IMMEDIATELY:
+
+1. Open a new browser tab
+2. Go to: https://holykids-timer-1.onrender.com/api/staff
+3. Tell me EXACTLY what you see
+
+Expected responses:
+- {"staff": []} = Table is EMPTY (you need to add staff)
+- {"staff": [{...}]} = Staff exists (good)
+- {"error": "..."} = Database connection failed
+- Nothing/timeout = Server is down
+
+If you see {"staff": []}, your table is EMPTY.
+You need to add staff in Supabase manually OR use the Add Staff button.
+
+ALSO CHECK:
+Go to: https://holykids-timer-1.onrender.com/api/diagnostic
+
+This will show if your database is connected.
+
+TELL ME WHAT BOTH URLs SHOW!
