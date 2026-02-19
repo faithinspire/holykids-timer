@@ -1,0 +1,25 @@
+✅ AUTOMATIC TOAST ERRORS REMOVED
+=====================================
+
+FIXED:
+1. Removed toast.error() from loadStaffData()
+2. Removed automatic redirects on error
+3. Added proper UI state handling
+4. Added console.log debugging throughout
+5. Staff not found now shows UI message (not toast)
+
+CHANGES:
+- loadStaffData() no longer shows toast errors
+- If staff not found, shows clean UI screen
+- All errors logged to console with [ENROLLMENT] prefix
+- Camera, capture, and enroll have debug logs
+
+FLOW NOW:
+1. Page loads → shows spinner
+2. Staff loads → shows enrollment UI
+3. Staff not found → shows "Staff Not Found" screen with back button
+4. NO automatic toast errors on mount
+
+COMMITTED TO GITHUB: c61f90b
+
+NEXT: Clear browser cache and test
