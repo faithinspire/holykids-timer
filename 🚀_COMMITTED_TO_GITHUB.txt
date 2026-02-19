@@ -1,0 +1,27 @@
+✅ COMMITTED AND PUSHED TO GITHUB
+=====================================
+
+Commit: 91a88ad
+Message: "fix: face enrollment USER NOT FOUND fixed"
+
+Files Changed:
+- app/staff/face-enrollment/page.tsx (FIXED: loads staff by URL param)
+- app/api/face/enroll/route.ts (FIXED: accepts staff_id from admin)
+- app/api/face/clock-in/route.ts (FIXED: server-side face matching)
+- app/api/face/verify/route.ts (FIXED: automatic identification)
+- app/face-clock-in/page.tsx (FIXED: sends only face_embedding)
+- lib/auditLog.ts (FIXED: uses created_at column)
+- app/api/staff/current/route.ts (NEW: get current user's staff)
+
+SQL Files Added:
+- FIX_USER_NOT_FOUND_PERMANENT.sql
+- FIX_AUDIT_LOGS_RLS_PERMANENT.sql
+
+NEXT STEPS:
+1. Go to Supabase SQL Editor
+2. Run FIX_AUDIT_LOGS_RLS_PERMANENT.sql
+3. Test face enrollment flow
+4. Verify no "USER NOT FOUND" error
+
+Your code is now live on GitHub!
+Auto-deployment will trigger on Vercel/Render.
