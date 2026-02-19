@@ -1,0 +1,46 @@
+🚨 DIAGNOSTIC CHECK REQUIRED
+=====================================
+
+The "Staff not found" error means your database connection is failing OR your staff table is empty.
+
+IMMEDIATE STEPS:
+=====================================
+
+1. Open your browser and go to:
+   https://holykids-timer-1.onrender.com/api/diagnostic
+   
+   (Replace with your actual deployed URL)
+
+2. Check the response:
+   - environment.hasSupabaseUrl: should be true
+   - environment.hasSupabaseKey: should be true
+   - database.connected: should be true
+   - database.staffCount: should be > 0
+
+3. If hasSupabaseUrl or hasSupabaseKey is FALSE:
+   → Your environment variables are NOT set on Render
+   → Go to Render Dashboard → Your Service → Environment
+   → Add:
+     NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+
+4. If database.connected is FALSE:
+   → Check the error message
+   → Verify your Supabase URL and key are correct
+   → Check if Supabase project is active
+
+5. If staffCount is 0:
+   → Your staff table is EMPTY
+   → Go to Supabase → Table Editor → staff table
+   → Add at least one staff member manually
+   → Or use the "Add Staff" button in the admin panel
+
+COMMON ISSUES:
+=====================================
+- Environment variables not set on deployment platform
+- Supabase project paused/inactive
+- Staff table empty
+- Wrong Supabase URL/key
+- RLS policies blocking access
+
+CHECK THIS NOW!
