@@ -171,8 +171,8 @@ export default function AdminStaffPage() {
     setShowPinModal(true)
   }
 
-  const handleFaceEnrollment = (staffMember: StaffMember) => {
-    router.push(`/staff/face-enrollment?staff_id=${staffMember.id}`)
+  const handleFingerprintSetup = (staffMember: StaffMember) => {
+    router.push(`/staff/fingerprint-setup?staff_id=${staffMember.id}`)
   }
 
   const departments = [
@@ -243,8 +243,8 @@ export default function AdminStaffPage() {
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{staffList.length}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border-l-4 border-purple-500 dark:border-purple-400 hover:scale-105 transition-transform">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Face ID</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{staffList.filter((s: any) => s.face_enrolled).length}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold">Fingerprint</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{staffList.filter((s: any) => s.biometric_enrolled).length}</p>
           </div>
         </div>
 
@@ -257,7 +257,7 @@ export default function AdminStaffPage() {
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Staff</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider hidden-mobile">Department</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">PIN</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Face ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fingerprint</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -297,26 +297,26 @@ export default function AdminStaffPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      {member.face_enrolled ? (
+                      {member.biometric_enrolled ? (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
                           ✅ Enrolled
                         </span>
                       ) : (
                         <button
-                          onClick={() => handleFaceEnrollment(member)}
+                          onClick={() => handleFingerprintSetup(member)}
                           className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs hover:bg-blue-200"
                         >
-                          Setup Face
+                          Setup Fingerprint
                         </button>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleFaceEnrollment(member)}
+                          onClick={() => handleFingerprintSetup(member)}
                           className="text-purple-600 hover:text-purple-800 text-xs font-medium"
                         >
-                          Face
+                          Fingerprint
                         </button>
                         <button
                           onClick={() => handleDeleteStaff(member.id, member.staff_id)}
@@ -515,11 +515,11 @@ export default function AdminStaffPage() {
                 <button
                   onClick={() => {
                     setShowPinModal(false)
-                    handleFaceEnrollment(selectedStaff)
+                    handleFingerprintSetup(selectedStaff)
                   }}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm"
                 >
-                  Setup Face ID
+                  Setup Fingerprint
                 </button>
               </div>
             </div>
