@@ -1,0 +1,92 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║     🔥 STAFF NOT FOUND - EMERGENCY DIAGNOSTIC 🔥             ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+I've added detailed logging to find out WHY staff aren't loading.
+
+═══════════════════════════════════════════════════════════════
+
+STEP 1: WAIT FOR DEPLOYMENT (2-3 MINUTES)
+The code is pushed to GitHub. Render is deploying now.
+Check Render logs to see when it's done.
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: OPEN THESE 3 URLS IN BROWSER
+
+URL 1 - Staff API (shows raw data):
+https://holykids-timer-1.onrender.com/api/staff
+
+URL 2 - Diagnostic (shows connection status):
+https://holykids-timer-1.onrender.com/api/diagnostic
+
+URL 3 - Test Page (visual interface):
+https://holykids-timer-1.onrender.com/test-staff-api
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: TRY FACE ENROLLMENT WITH CONSOLE OPEN
+
+1. Go to: https://holykids-timer-1.onrender.com/admin/staff
+2. Press F12 to open browser console
+3. Click "Setup Face" on any staff
+4. Watch the console for [ENROLLMENT] logs
+5. COPY ALL THE LOGS
+
+The logs will show:
+- ✅ How many staff were fetched
+- ✅ What IDs are available
+- ✅ Which ID it's looking for
+- ✅ Why it can't find the staff
+
+═══════════════════════════════════════════════════════════════
+
+STEP 4: SEND ME THIS INFORMATION
+
+1. Staff API Response (from URL 1)
+   Copy the entire JSON response
+
+2. Console Logs (from Step 3)
+   Copy all lines starting with [ENROLLMENT]
+
+3. Supabase Screenshot
+   - Go to Supabase → Table Editor → staff
+   - Take screenshot showing the data
+   - Make sure I can see the "id" column
+
+═══════════════════════════════════════════════════════════════
+
+QUICK TEST: Run TEST_STAFF_LOADING.bat
+
+Double-click: TEST_STAFF_LOADING.bat
+
+This will open all 3 URLs automatically.
+Check each tab and copy the results.
+
+═══════════════════════════════════════════════════════════════
+
+WHAT I SUSPECT:
+
+Possibility 1: Staff table is empty
+→ API returns: {"staff": [], "count": 0}
+→ Fix: Add staff in Supabase
+
+Possibility 2: is_active is false
+→ API filters out inactive staff
+→ Fix: Set is_active = true in Supabase
+
+Possibility 3: Environment variables missing
+→ API can't connect to database
+→ Fix: Add env vars to Render
+
+Possibility 4: RLS policies blocking
+→ Database connected but can't read
+→ Fix: Adjust RLS policies
+
+═══════════════════════════════════════════════════════════════
+
+The detailed logs will tell us EXACTLY which one it is!
+
+Once you send me the logs, I'll know the exact problem and fix it immediately.
