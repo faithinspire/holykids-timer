@@ -1,0 +1,94 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║          🔥 CRITICAL - DO THIS EXACT SEQUENCE 🔥             ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+The code is CORRECT. The problem is DATA, not code.
+
+The face enrollment page:
+✅ Only loads staff when URL has staff_id
+✅ NO automatic errors
+✅ NO premature execution
+✅ Camera only starts when button clicked
+✅ Everything is guarded properly
+
+The issue: /api/staff returns EMPTY or WRONG data
+
+═══════════════════════════════════════════════════════════════
+
+DO THIS NOW (EXACT ORDER):
+
+STEP 1: Open this URL in browser
+https://holykids-timer-1.onrender.com/api/staff
+
+COPY THE ENTIRE RESPONSE HERE
+
+Expected:
+{
+  "staff": [
+    {"id": "uuid-here", "staff_id": "STF1234", ...}
+  ],
+  "count": 1
+}
+
+If you see:
+- {"staff": [], "count": 0} → Staff table is EMPTY
+- {"error": "..."} → Database not connected
+- Nothing loads → Environment variables missing
+
+═══════════════════════════════════════════════════════════════
+
+STEP 2: Go to Supabase Dashboard
+1. Click "Table Editor"
+2. Click "staff" table
+3. Take screenshot showing:
+   - Column names (especially "id" and "is_active")
+   - At least one row of data
+   - The values in those columns
+
+═══════════════════════════════════════════════════════════════
+
+STEP 3: Try face enrollment with console open
+1. Go to /admin/staff
+2. Press F12 (open console)
+3. Click "Setup Face" on any staff
+4. COPY ALL [ENROLLMENT] logs from console
+
+The logs will show:
+- Total staff fetched: X
+- Available IDs: [...]
+- Searched for ID: ...
+- Why it failed
+
+═══════════════════════════════════════════════════════════════
+
+MOST LIKELY CAUSES:
+
+1. STAFF TABLE IS EMPTY
+   Symptom: API returns {"staff": [], "count": 0}
+   Fix: Add staff in Supabase with is_active = true
+
+2. is_active IS FALSE
+   Symptom: Staff exist but API returns empty
+   Fix: Set is_active = true in Supabase
+
+3. ENVIRONMENT VARIABLES MISSING
+   Symptom: API returns error
+   Fix: Add to Render:
+        NEXT_PUBLIC_SUPABASE_URL
+        NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+4. RLS BLOCKING READS
+   Symptom: Connected but can't read
+   Fix: Run in Supabase SQL Editor:
+        ALTER TABLE staff DISABLE ROW LEVEL SECURITY;
+
+═══════════════════════════════════════════════════════════════
+
+SEND ME:
+1. Staff API response (full JSON)
+2. Supabase screenshot (staff table)
+3. Console logs ([ENROLLMENT] lines)
+
+Then I'll tell you the EXACT fix!
