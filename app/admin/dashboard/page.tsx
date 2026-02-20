@@ -149,14 +149,14 @@ export default function AdminDashboard() {
         {/* Clock In Button - Prominent */}
         <div className="mb-4">
           <button 
-            onClick={() => window.location.href = '/face-clock-in'}
+            onClick={() => window.location.href = '/clock-in'}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 text-white rounded-2xl shadow-2xl p-6 hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
           >
             <div className="flex items-center justify-center space-x-4">
-              <span className="text-5xl">📸</span>
+              <span className="text-5xl">🔐</span>
               <div className="text-left">
-                <h2 className="text-2xl font-bold">Face Clock In / Out</h2>
-                <p className="text-white/80 text-sm">Use camera for facial recognition</p>
+                <h2 className="text-2xl font-bold">PIN + Fingerprint Clock In</h2>
+                <p className="text-white/80 text-sm">Secure authentication with PIN and device biometric</p>
               </div>
             </div>
           </button>
@@ -176,10 +176,10 @@ export default function AdminDashboard() {
             <h3 className="font-semibold text-gray-800 text-sm">Reports</h3>
           </button>
           
-          <button onClick={() => window.location.href = '/staff/face-enrollment'}
+          <button onClick={() => window.location.href = '/staff/fingerprint-setup'}
                   className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all">
-            <div className="text-3xl mb-2">📸</div>
-            <h3 className="font-semibold text-gray-800 text-sm">Face Enrollment</h3>
+            <div className="text-3xl mb-2">👆</div>
+            <h3 className="font-semibold text-gray-800 text-sm">Fingerprint Setup</h3>
           </button>
           
           <button onClick={() => window.location.href = '/admin/settings'}

@@ -129,7 +129,7 @@ export default function PinClockInPage() {
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <button
-          onClick={() => router.push('/face-clock-in')}
+          onClick={() => router.push('/clock-in')}
           className="text-white/80 hover:text-white transition-colors text-sm"
         >
           ← Back to Face Recognition
