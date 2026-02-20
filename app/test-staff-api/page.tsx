@@ -134,16 +134,33 @@ export default function TestStaffAPI() {
             <div className="space-y-2 text-sm">
               <p>
                 <span className="font-bold">Supabase URL:</span>{' '}
-                {typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL 
-                  ? '✅ Set' 
-                  : '❌ Not set'}
+                <span className={process.env.NEXT_PUBLIC_SUPABASE_URL ? 'text-green-600' : 'text-red-600'}>
+                  {process.env.NEXT_PUBLIC_SUPABASE_URL 
+                    ? `✅ ${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30)}...` 
+                    : '❌ Not set'}
+                </span>
               </p>
               <p>
                 <span className="font-bold">Supabase Key:</span>{' '}
-                {typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
-                  ? '✅ Set' 
-                  : '❌ Not set'}
+                <span className={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'text-green-600' : 'text-red-600'}>
+                  {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+                    ? `✅ Set (${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20)}...)` 
+                    : '❌ Not set'}
+                </span>
               </p>
+              
+              {(!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded">
+                  <p className="text-red-800 font-bold">❌ Environment Variables Missing</p>
+                  <p className="text-red-700 text-xs mt-2">
+                    Add these to your Render environment settings:
+                  </p>
+                  <ul className="text-red-700 text-xs mt-2 list-disc list-inside">
+                    <li>NEXT_PUBLIC_SUPABASE_URL</li>
+                    <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

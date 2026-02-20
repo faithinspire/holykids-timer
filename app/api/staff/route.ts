@@ -4,7 +4,20 @@ import { logAudit } from '@/lib/auditLog'
 
 export async function GET() {
   try {
+    console.log('[STAFF API] GET request received')
+    
+    // Check environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[STAFF API] Missing environment variables')
+      return NextResponse.json({ 
+        staff: [], 
+        error: 'Database configuration error: Missing environment variables' 
+      }, { status: 500 })
+    }
+
     const supabase = getSupabaseClient()
+    
+    console.log('[STAFF API] Fetching staff from database...')
     
     // Fetch all staff from Supabase
     const { data: staff, error } = await supabase
@@ -14,15 +27,27 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching staff:', error)
-      return NextResponse.json({ staff: [], error: error.message }, { status: 500 })
+      console.error('[STAFF API] Database error:', error)
+      return NextResponse.json({ 
+        staff: [], 
+        error: `Database error: ${error.message}` 
+      }, { status: 500 })
     }
 
-    return NextResponse.json({ staff: staff || [] })
+    console.log('[STAFF API] Successfully fetched', staff?.length || 0, 'staff members')
+    
+    return NextResponse.json({ 
+      staff: staff || [],
+      count: staff?.length || 0
+    })
   } catch (error: any) {
-    console.error('Server error:', error)
+    console.error('[STAFF API] Server error:', error)
     return NextResponse.json(
-      { staff: [], error: error.message || 'Database configuration error' },
+      { 
+        staff: [], 
+        error: error.message || 'Database configuration error',
+        details: error.stack 
+      },
       { status: 500 }
     )
   }

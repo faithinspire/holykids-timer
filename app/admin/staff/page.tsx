@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import HelpButton from '@/components/ui/HelpButton'
 import dynamic from 'next/dynamic'
 
 const ThemeToggle = dynamic(() => import('@/components/ui/ThemeToggle'), { ssr: false })
@@ -50,19 +51,39 @@ export default function AdminStaffPage() {
   const loadStaff = useCallback(async () => {
     try {
       setLoading(true)
+      console.log('[ADMIN] Loading staff from API...')
+      
       const response = await fetch(API_URL)
+      
+      if (!response.ok) {
+        console.error('[ADMIN] API response not OK:', response.status, response.statusText)
+        throw new Error(`API returned ${response.status}`)
+      }
+      
       const data = await response.json()
+      console.log('[ADMIN] API response:', data)
       
       if (data.staff && Array.isArray(data.staff)) {
+        console.log('[ADMIN] Loaded', data.staff.length, 'staff members')
         setStaffList(data.staff)
+      } else if (data.error) {
+        console.error('[ADMIN] API returned error:', data.error)
+        setStaffList([])
+        // Only show toast once, not on every render
+        if (data.error.includes('configuration')) {
+          toast.error('Database not configured. Check environment variables.')
+        }
       } else {
-        toast.error('Failed to load staff')
+        console.warn('[ADMIN] Unexpected API response format')
         setStaffList([])
       }
-    } catch (error) {
-      console.error('Failed to load staff:', error)
-      toast.error('Failed to load staff')
+    } catch (error: any) {
+      console.error('[ADMIN] Failed to load staff:', error)
       setStaffList([])
+      // Only show error toast once
+      if (error.message && !error.message.includes('fetch')) {
+        toast.error('Could not connect to server')
+      }
     } finally {
       setLoading(false)
     }
@@ -518,6 +539,8 @@ export default function AdminStaffPage() {
         <p className="mb-1">HOLYKIDS Staff Management System</p>
         <p className="text-gray-400">Created by Olushola Paul Odunuga</p>
       </div>
+
+      <HelpButton />
     </div>
   )
 }
