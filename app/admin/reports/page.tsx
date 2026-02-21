@@ -48,10 +48,32 @@ export default function AdminReportsPage() {
   const [selectedStaff, setSelectedStaff] = useState('all')
   const [reportType, setReportType] = useState('attendance')
   const [isExporting, setIsExporting] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
   }, [dateRange])
+
+  useEffect(() => {
+    loadLogo()
+  }, [])
+
+  const loadLogo = async () => {
+    try {
+      if (supabase) {
+        const { data } = await supabase
+          .from('app_settings')
+          .select('logo_url')
+          .single()
+
+        if (data?.logo_url) {
+          setLogoUrl(data.logo_url)
+        }
+      }
+    } catch (error) {
+      console.log('Could not load logo')
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -217,6 +239,8 @@ export default function AdminReportsPage() {
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
           .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #667eea; }
+          .header-logo { margin-bottom: 15px; }
+          .header-logo img { max-width: 120px; max-height: 120px; margin: 0 auto; display: block; }
           .org-name { font-size: 28px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
           .report-title { font-size: 20px; color: #555; margin-bottom: 10px; }
           .meta { font-size: 12px; color: #888; }
@@ -238,6 +262,7 @@ export default function AdminReportsPage() {
       </head>
       <body>
         <div class="header">
+          ${logoUrl ? `<div class="header-logo"><img src="${logoUrl}" alt="${ORGANIZATION_NAME} Logo" /></div>` : ''}
           <div class="org-name">${ORGANIZATION_NAME}</div>
           <div class="report-title">${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report</div>
           <div class="meta">Generated on: ${new Date().toLocaleDateString()} | Period: ${dateRange.start} to ${dateRange.end}</div>

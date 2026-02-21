@@ -42,6 +42,10 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<OrganizationSettings>(DEFAULT_SETTINGS)
   const [activeTab, setActiveTab] = useState('organization')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -60,6 +64,17 @@ export default function AdminSettingsPage() {
 
         if (data) {
           setSettings({ ...DEFAULT_SETTINGS, ...data })
+        }
+
+        // Load logo from app_settings
+        const { data: appSettings } = await supabase
+          .from('app_settings')
+          .select('logo_url')
+          .single()
+
+        if (appSettings?.logo_url) {
+          setCurrentLogoUrl(appSettings.logo_url)
+          setLogoPreview(appSettings.logo_url)
         }
       }
     } catch (error) {
@@ -103,6 +118,59 @@ export default function AdminSettingsPage() {
     if (confirm('Are you sure you want to reset all settings to default?')) {
       setSettings(DEFAULT_SETTINGS)
       toast.success('Settings reset to default')
+    }
+  }
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) {
+      toast.error('Please select a file first')
+      return
+    }
+    
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', logoFile)
+    
+    try {
+      const response = await fetch('/api/settings/upload-logo', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success('Logo uploaded successfully!')
+        setCurrentLogoUrl(result.logo_url)
+        setLogoPreview(result.logo_url)
+        setLogoFile(null)
+      } else {
+        toast.error(result.error || 'Failed to upload logo')
+      }
+    } catch (error) {
+      toast.error('Failed to upload logo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
+      
+      setLogoFile(file)
+      setLogoPreview(URL.createObjectURL(file))
     }
   }
 
@@ -195,6 +263,72 @@ export default function AdminSettingsPage() {
             {activeTab === 'organization' && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-800">Organization Information</h2>
+                
+                {/* Logo Upload Section */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+                  <h3 className="text-md font-semibold text-gray-800 mb-4">🎨 Organization Logo</h3>
+                  <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+                    {/* Logo Preview */}
+                    <div className="flex-shrink-0">
+                      {logoPreview ? (
+                        <div className="relative">
+                          <img 
+                            src={logoPreview} 
+                            alt="Organization Logo" 
+                            className="w-32 h-32 object-contain bg-white rounded-lg border-2 border-purple-300 p-2"
+                          />
+                          {currentLogoUrl && (
+                            <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                              ✓ Active
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                          <span className="text-gray-400 text-4xl">🏢</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Upload Controls */}
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Upload Logo Image
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Recommended: PNG with transparent background, 200x200px minimum, under 5MB
+                      </p>
+                      <button
+                        onClick={handleLogoUpload}
+                        disabled={!logoFile || uploading}
+                        className="mt-3 bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                      >
+                        {uploading ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>📤 Upload Logo</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-700">
+                      <strong>Note:</strong> Your logo will appear in the app header and at the top of all printed reports (PDF).
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
