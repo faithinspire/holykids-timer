@@ -34,11 +34,23 @@ export async function POST(request: Request) {
     // Generate user ID
     const userIdBuffer = new TextEncoder().encode(staff.id)
 
+    // Get the origin from the request headers
+    const origin = request.headers.get('origin') || request.headers.get('referer') || ''
+    let rpId = 'localhost'
+    
+    try {
+      const url = new URL(origin)
+      rpId = url.hostname
+    } catch (e) {
+      // Fallback to localhost for development
+      rpId = 'localhost'
+    }
+
     const options = {
       challenge: btoa(String.fromCharCode(...challenge)),
       rp: {
-        name: 'HOLYKIDS Attendance',
-        id: typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+        name: 'HOLYKIDS Attendance'
+        // Don't set id - let browser use current domain
       },
       user: {
         id: btoa(String.fromCharCode(...userIdBuffer)),
