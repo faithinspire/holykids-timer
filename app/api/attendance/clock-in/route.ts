@@ -4,35 +4,65 @@ import { logAudit } from '@/lib/auditLog'
 
 export async function POST(request: Request) {
   try {
-    const { staff_id, credential_id } = await request.json()
-
-    if (!staff_id || !credential_id) {
-      return NextResponse.json(
-        { success: false, error: 'Staff ID and credential are required' },
-        { status: 400 }
-      )
-    }
+    const { staff_id, credential_id, method } = await request.json()
 
     const supabase = getSupabaseClient()
+    let staffData = null
 
-    // Verify credential matches registered credential
-    const { data: staff, error: staffError } = await supabase
-      .from('staff')
-      .select('id, staff_id, first_name, last_name, biometric_credential_id')
-      .eq('id', staff_id)
-      .single()
+    // Handle PIN-only authentication
+    if (method === 'pin') {
+      if (!staff_id) {
+        return NextResponse.json(
+          { success: false, error: 'Staff ID is required' },
+          { status: 400 }
+        )
+      }
 
-    if (staffError || !staff) {
-      return NextResponse.json(
-        { success: false, error: 'Staff not found' },
-        { status: 404 }
-      )
+      // Get staff info
+      const { data: staff, error: staffError } = await supabase
+        .from('staff')
+        .select('id, staff_id, first_name, last_name')
+        .eq('id', staff_id)
+        .single()
+
+      if (staffError || !staff) {
+        return NextResponse.json(
+          { success: false, error: 'Staff not found' },
+          { status: 404 }
+        )
+      }
+
+      staffData = staff
     }
+    // Handle fingerprint-only authentication
+    else if (method === 'fingerprint') {
+      if (!credential_id) {
+        return NextResponse.json(
+          { success: false, error: 'Credential is required' },
+          { status: 400 }
+        )
+      }
 
-    if (staff.biometric_credential_id !== credential_id) {
+      // Find staff by credential ID
+      const { data: staff, error: staffError } = await supabase
+        .from('staff')
+        .select('id, staff_id, first_name, last_name, biometric_credential_id')
+        .eq('biometric_credential_id', credential_id)
+        .single()
+
+      if (staffError || !staff) {
+        return NextResponse.json(
+          { success: false, error: 'Fingerprint not recognized' },
+          { status: 404 }
+        )
+      }
+
+      staffData = staff
+    }
+    else {
       return NextResponse.json(
-        { success: false, error: 'Invalid fingerprint' },
-        { status: 401 }
+        { success: false, error: 'Invalid authentication method' },
+        { status: 400 }
       )
     }
 
@@ -41,7 +71,7 @@ export async function POST(request: Request) {
     const { data: existingAttendance } = await supabase
       .from('attendance')
       .select('id, check_in_time, check_out_time')
-      .eq('staff_id', staff_id)
+      .eq('staff_id', staffData.id)
       .gte('check_in_time', `${today}T00:00:00`)
       .lte('check_in_time', `${today}T23:59:59`)
       .single()
@@ -57,11 +87,11 @@ export async function POST(request: Request) {
     const { data: attendance, error: attendanceError } = await supabase
       .from('attendance')
       .insert({
-        staff_id: staff_id,
+        staff_id: staffData.id,
         check_in_time: new Date().toISOString(),
-        auth_method: 'pin+fingerprint',
-        staff_name: `${staff.first_name} ${staff.last_name}`,
-        staff_number: staff.staff_id
+        auth_method: method,
+        staff_name: `${staffData.first_name} ${staffData.last_name}`,
+        staff_number: staffData.staff_id
       })
       .select()
       .single()
@@ -76,9 +106,9 @@ export async function POST(request: Request) {
 
     // Log audit
     logAudit({
-      staff_id: staff_id,
+      staff_id: staffData.id,
       action: 'clock_in',
-      details: `Clocked in using PIN + Fingerprint`
+      details: `Clocked in using ${method}`
     }).catch(console.error)
 
     return NextResponse.json({
