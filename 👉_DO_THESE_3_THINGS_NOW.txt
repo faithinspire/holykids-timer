@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════════════
+🚀 LOGO FEATURE IS READY! DO THESE 3 THINGS NOW:
+═══════════════════════════════════════════════════════════════════
+
+✅ CODE IS ALREADY ON GITHUB AND WILL AUTO-DEPLOY TO RENDER!
+
+═══════════════════════════════════════════════════════════════════
+STEP 1: FIX CLOCK-IN ERROR (CRITICAL - DO THIS FIRST!)
+═══════════════════════════════════════════════════════════════════
+
+1. Open Supabase Dashboard
+2. Click "SQL Editor" in left sidebar
+3. Copy and paste this SQL:
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS attendance_date DATE NOT NULL DEFAULT CURRENT_DATE,
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'present',
+ADD COLUMN IF NOT EXISTS is_late BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS auth_method TEXT DEFAULT 'pin',
+ADD COLUMN IF NOT EXISTS staff_name TEXT,
+ADD COLUMN IF NOT EXISTS staff_number TEXT;
+
+UPDATE attendance SET attendance_date = DATE(check_in_time) WHERE attendance_date IS NULL;
+UPDATE attendance SET status = 'present' WHERE status IS NULL;
+
+DROP POLICY IF EXISTS "Allow insert attendance" ON attendance;
+DROP POLICY IF EXISTS "Allow read attendance" ON attendance;
+DROP POLICY IF EXISTS "Allow update attendance" ON attendance;
+
+CREATE POLICY "Allow insert attendance" ON attendance FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow read attendance" ON attendance FOR SELECT USING (true);
+CREATE POLICY "Allow update attendance" ON attendance FOR UPDATE USING (true);
+
+4. Click "Run" button
+5. Wait for "Success" message
+
+═══════════════════════════════════════════════════════════════════
+STEP 2: CREATE LOGO DATABASE TABLE
+═══════════════════════════════════════════════════════════════════
+
+1. Still in Supabase SQL Editor
+2. Copy and paste this SQL:
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  organization_name TEXT DEFAULT 'HOLYKIDS',
+  logo_url TEXT,
+  primary_color TEXT DEFAULT '#667eea',
+  secondary_color TEXT DEFAULT '#764ba2',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO app_settings (organization_name, logo_url, primary_color, secondary_color)
+VALUES ('HOLYKIDS', NULL, '#667eea', '#764ba2')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow read app_settings" ON app_settings FOR SELECT USING (true);
+CREATE POLICY "Allow update app_settings" ON app_settings FOR UPDATE USING (true);
+
+3. Click "Run" button
+4. Wait for "Success" message
+
+═══════════════════════════════════════════════════════════════════
+STEP 3: CREATE STORAGE BUCKET FOR LOGOS
+═══════════════════════════════════════════════════════════════════
+
+1. In Supabase Dashboard, click "Storage" in left sidebar
+2. Click "New Bucket" button (green button at top)
+3. Enter bucket name: logos
+4. IMPORTANT: Toggle "Public bucket" to ON (make it public!)
+5. Click "Create Bucket"
+6. Done!
+
+═══════════════════════════════════════════════════════════════════
+STEP 4: WAIT FOR DEPLOYMENT (AUTOMATIC)
+═══════════════════════════════════════════════════════════════════
+
+Code is already on GitHub. Render will auto-deploy in 3-5 minutes.
+
+Check deployment status:
+1. Go to Render Dashboard
+2. Click your app
+3. Wait for "Live" status (green)
+
+═══════════════════════════════════════════════════════════════════
+STEP 5: CLEAR BROWSER CACHE AND TEST
+═══════════════════════════════════════════════════════════════════
+
+1. Open your app: https://holykids-timer-1.onrender.com
+2. Press Ctrl + Shift + R (force refresh)
+3. Test clock-in (should work now!)
+4. Go to Admin → Settings
+5. Upload a logo
+6. Go to Admin → Reports
+7. Download PDF (logo should appear at top!)
+
+═══════════════════════════════════════════════════════════════════
+📖 COMPLETE USER MANUAL CREATED!
+═══════════════════════════════════════════════════════════════════
+
+File: 📖_USER_MANUAL_STAFF_ATTENDANCE_SYSTEM.md
+
+This manual includes:
+- Complete system overview
+- Step-by-step instructions for staff
+- Step-by-step instructions for administrators
+- Logo upload instructions
+- Report generation guide
+- Troubleshooting guide
+- FAQ section
+
+Share this with your organization!
+
+═══════════════════════════════════════════════════════════════════
+✅ SUMMARY OF WHAT'S NEW:
+═══════════════════════════════════════════════════════════════════
+
+1. Logo upload feature in Settings page
+2. Logo appears in PDF reports
+3. Complete user manual document
+4. Fixed clock-in error (after you run SQL)
+5. All code committed to GitHub
+
+═══════════════════════════════════════════════════════════════════
+🎯 TOTAL TIME TO COMPLETE: 5-10 MINUTES
+═══════════════════════════════════════════════════════════════════
+
+Just run the 2 SQL scripts and create the storage bucket!
+
+═══════════════════════════════════════════════════════════════════
