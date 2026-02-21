@@ -1,0 +1,27 @@
+✅ WEBAUTHN RP ID ERROR FIXED
+
+PROBLEM:
+The relying party ID was being set to window.location.hostname
+in server-side code, which caused the error:
+"The relying party ID is not a registrable domain suffix..."
+
+FIX APPLIED:
+Removed the "id" field from the rp (relying party) configuration.
+WebAuthn will now automatically use the current domain.
+
+CHANGES:
+- Removed: id: window.location.hostname (server-side code can't access window)
+- Now: Browser automatically uses current domain as RP ID
+
+DEPLOYED:
+✅ Code committed
+✅ Pushed to GitHub
+✅ Wait 2-3 minutes for Render deployment
+
+AFTER DEPLOYMENT:
+1. Clear browser cache (Ctrl+Shift+R)
+2. Go to /staff/fingerprint-setup
+3. Click "Register Fingerprint"
+4. Should work without RP ID error
+
+The browser will automatically use the correct domain as the RP ID.
