@@ -59,11 +59,15 @@ export async function POST(request: Request) {
 
         // Record attendance
         if (action === 'clock_in') {
+          const timestamp = new Date(record.timestamp)
           const { error: attendanceError } = await supabase
             .from('attendance')
             .insert({
               staff_id: staff.id,
-              check_in_time: timestamp,
+              check_in_time: timestamp.toISOString(),
+              attendance_date: timestamp.toISOString().split('T')[0],
+              status: 'present',
+              is_late: false,
               auth_method: 'external_device',
               staff_name: `${staff.first_name} ${staff.last_name}`,
               staff_number: staff.staff_id
@@ -84,15 +88,14 @@ export async function POST(request: Request) {
           }
         } else if (action === 'clock_out') {
           // Find today's attendance record
-          const today = new Date(timestamp).toISOString().split('T')[0]
+          const attendanceDate = new Date(record.timestamp).toISOString().split('T')[0]
           const { data: attendance, error: findError } = await supabase
             .from('attendance')
             .select('id')
             .eq('staff_id', staff.id)
-            .gte('check_in_time', `${today}T00:00:00`)
-            .lte('check_in_time', `${today}T23:59:59`)
+            .eq('attendance_date', attendanceDate)
             .is('check_out_time', null)
-            .single()
+            .maybeSingle()
 
           if (findError || !attendance) {
             results.failed++
@@ -102,7 +105,7 @@ export async function POST(request: Request) {
 
           const { error: updateError } = await supabase
             .from('attendance')
-            .update({ check_out_time: timestamp })
+            .update({ check_out_time: new Date(record.timestamp).toISOString() })
             .eq('id', attendance.id)
 
           if (updateError) {

@@ -72,11 +72,11 @@ export async function POST(request: Request) {
       .from('attendance')
       .select('id, check_in_time, check_out_time')
       .eq('staff_id', staffData.id)
-      .gte('check_in_time', `${today}T00:00:00`)
-      .lte('check_in_time', `${today}T23:59:59`)
-      .single()
+      .eq('attendance_date', today)
+      .is('check_out_time', null)
+      .maybeSingle()
 
-    if (existingAttendance && !existingAttendance.check_out_time) {
+    if (existingAttendance) {
       return NextResponse.json(
         { success: false, error: 'Already clocked in today' },
         { status: 400 }
@@ -84,11 +84,15 @@ export async function POST(request: Request) {
     }
 
     // Record clock-in
+    const now = new Date()
     const { data: attendance, error: attendanceError } = await supabase
       .from('attendance')
       .insert({
         staff_id: staffData.id,
-        check_in_time: new Date().toISOString(),
+        check_in_time: now.toISOString(),
+        attendance_date: now.toISOString().split('T')[0], // Required: YYYY-MM-DD
+        status: 'present', // Required: present, absent, etc.
+        is_late: false, // Can be calculated based on shift times
         auth_method: method,
         staff_name: `${staffData.first_name} ${staffData.last_name}`,
         staff_number: staffData.staff_id
@@ -99,7 +103,7 @@ export async function POST(request: Request) {
     if (attendanceError) {
       console.error('Attendance insert error:', attendanceError)
       return NextResponse.json(
-        { success: false, error: 'Failed to record attendance' },
+        { success: false, error: `Failed to record attendance: ${attendanceError.message}` },
         { status: 500 }
       )
     }
