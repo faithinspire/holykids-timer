@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Make all input text BOLD and larger for better visibility */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-weight: 700 !important;
+    font-size: 1.125rem !important;
+  }
+}
+
 @layer utilities {
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
