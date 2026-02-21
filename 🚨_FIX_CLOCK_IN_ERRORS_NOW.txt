@@ -1,0 +1,124 @@
+═══════════════════════════════════════════════════════════════════
+🚨 FIX "FAILED TO RECORD ATTENDANCE" ERROR - DO THIS NOW
+═══════════════════════════════════════════════════════════════════
+
+PROBLEM:
+- "Failed to record attendance" error when clocking in
+- "Staff not found" error
+
+ROOT CAUSE:
+Your attendance table is missing required columns:
+- attendance_date (required)
+- status (required)
+
+═══════════════════════════════════════════════════════════════════
+
+✅ SOLUTION (2 STEPS):
+
+STEP 1: RUN SQL IN SUPABASE
+════════════════════════════════════════════════════════════════
+
+1. Open Supabase Dashboard
+2. Go to SQL Editor
+3. Copy and paste this SQL:
+
+```sql
+-- Add missing columns
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS attendance_date DATE NOT NULL DEFAULT CURRENT_DATE;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attendance_status') THEN
+        CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'on_leave');
+    END IF;
+END $$;
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS status attendance_status DEFAULT 'present';
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS is_late BOOLEAN DEFAULT false;
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS auth_method TEXT DEFAULT 'pin';
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS staff_name TEXT;
+
+ALTER TABLE attendance
+ADD COLUMN IF NOT EXISTS staff_number TEXT;
+
+-- Update existing records
+UPDATE attendance
+SET attendance_date = DATE(check_in_time)
+WHERE attendance_date IS NULL AND check_in_time IS NOT NULL;
+
+UPDATE attendance
+SET status = 'present'
+WHERE status IS NULL;
+
+-- Fix RLS policies
+DROP POLICY IF EXISTS "Allow insert attendance" ON attendance;
+DROP POLICY IF EXISTS "Allow read attendance" ON attendance;
+DROP POLICY IF EXISTS "Allow update attendance" ON attendance;
+
+CREATE POLICY "Allow insert attendance"
+ON attendance FOR INSERT
+WITH CHECK (true);
+
+CREATE POLICY "Allow read attendance"
+ON attendance FOR SELECT
+USING (true);
+
+CREATE POLICY "Allow update attendance"
+ON attendance FOR UPDATE
+USING (true);
+```
+
+4. Click "Run" button
+5. Wait for "Success" message
+
+STEP 2: DEPLOY YOUR APP
+════════════════════════════════════════════════════════════════
+
+Your code is already fixed and pushed to GitHub.
+
+1. Go to Render Dashboard
+2. Find your app
+3. Click "Manual Deploy" → "Deploy latest commit"
+4. Wait 2-3 minutes for deployment
+5. Clear browser cache (Ctrl+Shift+R)
+
+═══════════════════════════════════════════════════════════════════
+
+✅ WHAT WAS FIXED IN CODE:
+
+1. Clock-in API now includes:
+   - attendance_date (today's date)
+   - status ('present')
+   - is_late (false)
+   - auth_method ('pin' or 'fingerprint')
+
+2. Better error messages showing exact problem
+
+3. Fixed attendance lookup to use attendance_date instead of time range
+
+═══════════════════════════════════════════════════════════════════
+
+🧪 TEST AFTER FIX:
+
+1. Open your app
+2. Go to Clock In page
+3. Choose "Clock In with PIN"
+4. Enter your PIN
+5. Should see: "✅ Clocked in successfully!"
+
+If still error, check Supabase logs for exact error message.
+
+═══════════════════════════════════════════════════════════════════
+
+📝 FULL SQL SCRIPT AVAILABLE IN:
+🔧_FIX_ATTENDANCE_TABLE_NOW.sql
+
+═══════════════════════════════════════════════════════════════════
